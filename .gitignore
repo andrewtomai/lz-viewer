@@ -20,6 +20,8 @@
 *.tar
 *.zip
 
+assoc.*
+
 # Logs and databases #
 ######################
 *.log
