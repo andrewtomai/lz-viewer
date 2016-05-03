@@ -1,4 +1,5 @@
-#----------------------------------------------------------------------------------------------#
+################################################################################################
+#---------------------------------------helper functions---------------------------------------#
 
 import pysam
 import argparse
@@ -61,9 +62,16 @@ def create_data(file):
 		data[pvalue].append(words[8])
 	print data
 
-arguments = check_options()
+#----------------------------------------------------------------------------------------------------#
+######################################################################################################
 
+#(main)#
+
+#check the input arguments
+arguments = check_options()
+#open the specified file
 file = open_file(arguments["filename"])
+#create the dictionary from file
 create_data(file)
 
 
