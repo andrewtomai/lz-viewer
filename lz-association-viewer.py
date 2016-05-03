@@ -49,10 +49,10 @@ def create_data(file):
 	position = "position"
 	pvalue = "pvalue"
 	data = { pvalue : [], position : [], variant : [] }
-	for row in file.fetch(11, 1, 5):
-		data[variant].append(row[3])
-		data[position].append(row[1])
-		data[pvalue].append(row[8])
+	#for row in file.fetch(11, 1, 5):
+	#	data[variant].append(row[3])
+	#	data[position].append(row[1])
+	#	data[pvalue].append(row[8])
 	print data
 
 arguments = check_options()
