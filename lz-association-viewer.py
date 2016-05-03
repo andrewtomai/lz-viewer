@@ -57,6 +57,7 @@ def create_data(file):
 		print row[4]
 		print row[5]
 		print row[6]
+		row.contig
 
 		#data[variant].append(row[3])
 		#data[position].append(row[1])
