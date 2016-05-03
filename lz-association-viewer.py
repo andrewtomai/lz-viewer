@@ -45,12 +45,17 @@ def open_file(file_name):
 ##MODIFIES data
 ##EFFECTS creates a data dictionary by iterating through the tabix file
 def create_data(file):
+	#setting values of keys
 	variant = "variant"
 	position = "position"
 	pvalue = "pvalue"
+	#initializing the data dictionary
 	data = { pvalue : [], position : [], variant : [] }
-	for row in file.fetch(11, 193154, 193797):
+	#looping through the specific region of the tabix file
+	for row in file.fetch(11, 193154, 193808):
+		#splitting the row up into individual words
 		words = row.split()
+		#adding the data to the dictionary
 		data[variant].append(words[3])
 		data[position].append(words[1])
 		data[pvalue].append(words[8])
