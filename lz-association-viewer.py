@@ -49,7 +49,7 @@ def create_data(file):
 	position = "position"
 	pvalue = "pvalue"
 	data = { pvalue : [], position : [], variant : [] }
-	for row in file.fetch(11, 1, 5):
+	for row in file.fetch(11, 193154, 193797):
 		print row[0]
 		print row[1]
 		print row[2]
