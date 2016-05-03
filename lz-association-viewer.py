@@ -17,7 +17,7 @@ def check_options():
 	#parse the arguments
 	args = parser.parse_args()
 	#set the filename
-	filename = args.filename
+	file = args.filename
 	#if a port was specified
 	if args.port:
 		port_number = args.port
@@ -25,7 +25,7 @@ def check_options():
 	else: #otherwise the default port is 5000
 		port_number = 5000
 	#return a dictionary including the filename and port number
-	return {'filename' : filename, 'port_number' : port_number }
+	return {'filename' : file, 'port_number' : port_number }
 
 
 
