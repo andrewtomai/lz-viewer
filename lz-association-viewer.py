@@ -52,7 +52,7 @@ def create_data(file):
 	#initializing the data dictionary
 	data = { pvalue : [], position : [], variant : [] }
 	#looping through the specific region of the tabix file
-	for row in file.fetch(11, 193154, 193808):
+	for row in file.fetch(11, 193154, 500000):
 		#splitting the row up into individual words
 		words = row.split()
 		#adding the data to the dictionary
