@@ -13,3 +13,7 @@ data[position].append(3)
 
 json_data = json.dumps(data)
 print json_data
+string  = "went to work for a thing"
+words = string.split()
+print words[0]
+print words[2]
