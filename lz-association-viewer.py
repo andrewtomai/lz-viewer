@@ -108,14 +108,16 @@ if __name__ == '__main__':
 
 	#check the input arguments
 	arguments = check_options()
-	filename = arguments["filename"]
+	#filename = arguments["filename"]
 	port_number = arguments["port_number"]
+
 	#open the specified file
-	file = open_file(filename)
+	#file = open_file(filename)
 	#create the dictionary from file
-	data = create_data(file)
+	#data = create_data(file)
 	#format the dictionary according to the portal API
-	object = format_data(data)
-	print object
+	#object = format_data(data)
+	#print object
+
 	#run the flask webserver
 	lz_app.run(port = port_number)
