@@ -73,13 +73,14 @@ def format_data(data):
 
 
 ##Flask initialization	
-#lz_app = Flask(__name__)
-#@lz_app.route('/')
-#@lz_app.route('/api')
+lz_app = Flask(__name__)
+@lz_app.route('/')
+@lz_app.route('/api')
 ##REQUIRES object is a dictionary
 ##MODIFIES lz_app
 ##EFFECTS displays a json objects at route '/api'
-#def api(object):
+def api(object):
+	return jsonify(object)
 
 #----------------------------------------------------------------------------------------------------#
 ######################################################################################################
@@ -97,7 +98,5 @@ if __name__ == '__main__':
 	data = create_data(file)
 	#format the dictionary according to the portal API
 	object = format_data(data)
-	print object
-
-
-
+	#run the flask webserver
+	la_app.run(port = port_number)
