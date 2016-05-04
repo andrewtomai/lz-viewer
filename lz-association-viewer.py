@@ -61,6 +61,7 @@ def create_data(file):
 		data[variant].append(words[3])
 		data[position].append(int(words[1]))
 		data[pvalue].append(int(words[8]))
+	print data
 	return data
 
 ##REQUIRES data is a dictionary 
@@ -108,10 +109,10 @@ if __name__ == '__main__':
 	#filename = arguments["filename"]
 	port_number = arguments["port_number"]
 	#open the specified file
-	#file = open_file(filename)
+	file = open_file(filename)
 	#create the dictionary from file
-	#data = create_data(file)
+	data = create_data(file)
 	#format the dictionary according to the portal API
-	#object = format_data(data)
+	object = format_data(data)
 	#run the flask webserver
-	lz_app.run(port = port_number)
+	#lz_app.run(port = port_number)
