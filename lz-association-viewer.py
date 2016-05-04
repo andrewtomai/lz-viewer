@@ -4,6 +4,7 @@
 import pysam
 import argparse
 import json
+from flask import Flask, jsonify
 
 ##REQUIRES: nothing
 ##MODIFIES: file_name, port_number
@@ -60,19 +61,44 @@ def create_data(file):
 		data[variant].append(words[3])
 		data[position].append(words[1])
 		data[pvalue].append(words[8])
-	print data
+	return data
+
+##REQUIRES data is a dictionary 
+##MODIFIES data
+##EFFECTS adds necessary 'lastPage' key  
+def format_data(data):
+	new_key = { 'lastPage' : null }
+	data = {data, new_key}
+	return data
+
+
+
+##Flask initialization	
+#lz_app = Flask(__name__)
+#@lz_app.route('/')
+#@lz_app.route('/api')
+##REQUIRES object is a dictionary
+##MODIFIES lz_app
+##EFFECTS displays a json objects at route '/api'
+#def api(object):
 
 #----------------------------------------------------------------------------------------------------#
 ######################################################################################################
 
 #(main)#
+if __name__ == '__main__':
 
-#check the input arguments
-arguments = check_options()
-#open the specified file
-file = open_file(arguments["filename"])
-#create the dictionary from file
-create_data(file)
+	#check the input arguments
+	arguments = check_options()
+	filename = arguments["filename"]
+	port_number = arguments["port_number"]
+	#open the specified file
+	file = open_file(filename)
+	#create the dictionary from file
+	data = create_data(file)
+	#format the dictionary according to the portal API
+	object = format_data(data)
+	print object
 
 
 
