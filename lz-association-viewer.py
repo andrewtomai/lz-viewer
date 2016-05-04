@@ -59,8 +59,8 @@ def create_data(file):
 		words = row.split()
 		#adding the data to the dictionary
 		data[variant].append(words[3])
-		data[position].append(int(words[1].strip('"')))
-		data[pvalue].append(int(words[8].strip('"')))
+		data[position].append(int(words[1].strip("'")))
+		data[pvalue].append(int(words[8].strip("'")))
 	return data
 
 ##REQUIRES data is a dictionary 
