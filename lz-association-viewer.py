@@ -82,7 +82,7 @@ def home():
 ##MODIFIES lz_app
 ##EFFECTS displays a json objects at route '/api'
 def api(object):
-	return jsonify(object)
+	return json.dumps(object)
 
 #----------------------------------------------------------------------------------------------------#
 ######################################################################################################
