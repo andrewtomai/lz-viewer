@@ -67,7 +67,7 @@ def create_data(file):
 ##MODIFIES data
 ##EFFECTS adds necessary 'lastPage' key  
 def format_data(data):
-	new_key = { 'lastPage' : null }
+	new_key = { 'lastPage' : None }
 	data = {data, new_key}
 	return data
 
