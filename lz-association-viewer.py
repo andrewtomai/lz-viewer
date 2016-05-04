@@ -62,7 +62,7 @@ def create_data(file):
 		if words[8] == 'NA': data[pvalue].append(words[8])
 		else: data[pvalue].append(float(words[8]))
 
-		data[position].append(float(words[1]))
+		data[position].append(long(words[1]))
 		
 	return data
 
