@@ -75,7 +75,9 @@ def format_data(data):
 ##Flask initialization	
 lz_app = Flask(__name__)
 @lz_app.route('/')
-@lz_app.route('/api')
+def home():
+	return "hello world!"
+@lz_app.route('/api', methods=['GET'])
 ##REQUIRES object is a dictionary
 ##MODIFIES lz_app
 ##EFFECTS displays a json objects at route '/api'

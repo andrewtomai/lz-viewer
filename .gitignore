@@ -21,7 +21,7 @@
 *.zip
 
 assoc.*
-
+venv/
 # Logs and databases #
 ######################
 *.log
