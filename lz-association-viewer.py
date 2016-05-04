@@ -105,7 +105,7 @@ if __name__ == '__main__':
 
 	#check the input arguments
 	arguments = check_options()
-	#filename = arguments["filename"]
+	filename = arguments["filename"]
 	port_number = arguments["port_number"]
 	#open the specified file
 	file = open_file(filename)
