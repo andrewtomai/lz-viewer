@@ -59,8 +59,11 @@ def create_data(file):
 		words = row.split()
 		#adding the data to the dictionary
 		data[variant].append(words[3])
-		data[position].append(words[1])
-		data[pvalue].append(words[8])
+		if words[8] == 'NA': data[pvalue].append(words[8])
+		else: data[pvalue].append(float(words[8]))
+
+		data[position].append(long(words[1]))
+		
 	return data
 
 ##REQUIRES data is a dictionary 
@@ -73,13 +76,29 @@ def format_data(data):
 
 
 ##Flask initialization	
-#lz_app = Flask(__name__)
-#@lz_app.route('/')
-#@lz_app.route('/api')
+lz_app = Flask(__name__)
+@lz_app.route('/')
+def home():
+	return "hello world!"
+@lz_app.route('/api', methods=['GET'])
 ##REQUIRES object is a dictionary
 ##MODIFIES lz_app
 ##EFFECTS displays a json objects at route '/api'
-#def api(object):
+def api():
+	#check the input arguments
+	arguments = check_options()
+	filename = arguments["filename"]
+	
+	#open the specified file
+	file = open_file(filename)
+
+	#create the dictionary from file
+	data = create_data(file)
+
+	#format the dictionary according to the portal API
+	object = format_data(data)
+
+	return jsonify(object)
 
 #----------------------------------------------------------------------------------------------------#
 ######################################################################################################
@@ -98,6 +117,5 @@ if __name__ == '__main__':
 	#format the dictionary according to the portal API
 	object = format_data(data)
 	print object
-
-
-
+	#run the flask webserver
+	lz_app.run(port = port_number)
