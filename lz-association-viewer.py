@@ -81,8 +81,21 @@ def home():
 ##REQUIRES object is a dictionary
 ##MODIFIES lz_app
 ##EFFECTS displays a json objects at route '/api'
-def api(object):
-	return json.dumps(object)
+def api():
+	#check the input arguments
+	arguments = check_options()
+	filename = arguments["filename"]
+	
+	#open the specified file
+	file = open_file(filename)
+
+	#create the dictionary from file
+	data = create_data(file)
+
+	#format the dictionary according to the portal API
+	object = format_data(data)
+
+	return jsonify(object)
 
 #----------------------------------------------------------------------------------------------------#
 ######################################################################################################
@@ -92,13 +105,13 @@ if __name__ == '__main__':
 
 	#check the input arguments
 	arguments = check_options()
-	filename = arguments["filename"]
+	#filename = arguments["filename"]
 	port_number = arguments["port_number"]
 	#open the specified file
-	file = open_file(filename)
+	#file = open_file(filename)
 	#create the dictionary from file
-	data = create_data(file)
+	#data = create_data(file)
 	#format the dictionary according to the portal API
-	object = format_data(data)
+	#object = format_data(data)
 	#run the flask webserver
 	lz_app.run(port = port_number)
