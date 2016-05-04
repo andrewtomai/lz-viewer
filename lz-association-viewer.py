@@ -59,8 +59,8 @@ def create_data(file):
 		words = row.split()
 		#adding the data to the dictionary
 		data[variant].append(words[3])
-		data[position].append(words[1])
-		data[pvalue].append(words[8])
+		data[position].append(int(words[1]))
+		data[pvalue].append(int(words[8]))
 	return data
 
 ##REQUIRES data is a dictionary 
@@ -95,7 +95,7 @@ def api():
 	#format the dictionary according to the portal API
 	object = format_data(data)
 
-	return json.dumps(object)
+	return jsonify(object)
 
 #----------------------------------------------------------------------------------------------------#
 ######################################################################################################
