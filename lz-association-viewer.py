@@ -59,8 +59,11 @@ def create_data(file):
 		words = row.split()
 		#adding the data to the dictionary
 		data[variant].append(words[3])
+		if words[8] == 'NA': data[pvalue].append(words[8])
+		else: data[pvalue].append(float(words[8]))
+
 		data[position].append(float(words[1]))
-		data[pvalue].append(float(words[8]))
+		
 	return data
 
 ##REQUIRES data is a dictionary 
