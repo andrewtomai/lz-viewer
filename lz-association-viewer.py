@@ -99,4 +99,4 @@ if __name__ == '__main__':
 	#format the dictionary according to the portal API
 	object = format_data(data)
 	#run the flask webserver
-	la_app.run(port = port_number)
+	lz_app.run(port = port_number)
