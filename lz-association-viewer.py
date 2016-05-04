@@ -95,7 +95,7 @@ def api():
 	#format the dictionary according to the portal API
 	object = format_data(data)
 
-	return jsonify(object)
+	return json.dumps(object)
 
 #----------------------------------------------------------------------------------------------------#
 ######################################################################################################
