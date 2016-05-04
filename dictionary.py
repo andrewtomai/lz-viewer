@@ -11,7 +11,10 @@ data[position].append(1)
 data[position].append(2)
 data[position].append(3)
 
-json_data = json.dumps(data)
+new_key = {'lastPage' : None}
+object = {'data' : data, 'lastPage' : None}
+
+json_data = json.dumps(object)
 print json_data
 string  = "went to work for a thing"
 words = string.split()
