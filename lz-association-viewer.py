@@ -35,7 +35,7 @@ def check_options():
 
 ##REQUIRES filename is a tabix file
 ##MODIFIES stdout
-##EFFECTS reads the header of filename using terminal command "tabix -H", returns a list of names.
+##EFFECTS reads the header of filename, returns a list of names.
 def check_header(filename):
 	#open the gzip file
 	with gzip.open(filename) as f:
@@ -69,7 +69,7 @@ def gather_data_gzip(filename, names, start, end):
 		data_dict[name] = []
 
 	#get the column of positions
-	position_column = get_position(names)
+	position_column = get_column(names, "position")
 	#set the current column to 0
 	current_column = 0
 	#get the number of columns
@@ -103,9 +103,6 @@ def gather_data_gzip(filename, names, start, end):
 
 
 
-
-
-
 ##REQUIRES names is header list, current_column is < len(names), dict has keys from names
 ##MODIFIES dict
 ##EFFECTS adds 'datum' to the dict
@@ -128,15 +125,40 @@ def add_datum(names, column, datum, dict):
 ##REQUIRES names is a header list
 ##MODIFIES position_column
 ##EFFECTS returns the column that denotes position
-def get_position(names):
+def get_column(names, key):
 	column = 0
 	for name in names:
-		if name == "position":
+		if name == key:
 			break
 		column += 1
 	return column 
 
 
+##REQUIRES filename is a tabix file, names is the header of the file
+##MODIFIES nothing
+##EFFECTS finds the position of the minimum pvalue
+def find_min_pval(filename, names):
+	#get the column of the pvals
+	pval_column = get_column(names, "pvalue")
+	#get the column of positions
+	position_column = get_column(names, "position")
+	#open the file
+	with gzip.open(filename, 'rb') as f:
+		next(f)
+		#set baselines for current position and min
+		current_min = 1
+		current_position = -1
+		#find the minimum element's position
+		for line in f:
+			data = line.split()
+			
+			if data[pval_column] == "NA":
+				continue
+			
+			if float(data[pval_column]) < current_min:
+				current_min = float(data[pval_column])
+				current_position = long(data[position_column])
+	return current_position
 
 
 
@@ -218,7 +240,16 @@ def api():
 	
 	#get the header of the file
 	header = check_header(filename)
-	data = gather_data_gzip(filename, header, 1, 193797)
+	#find the minimum pval
+	minimum_position = find_min_pval(filename, header)
+	start = minimum_position - 258613
+	end = minimum_position + 258613
+	#if we, for some reason, did not find a minimum
+	if minimum_position == -1:
+		start = 1
+		end = 500000
+	#gather the data
+	data = gather_data_gzip(filename, header, start, end)
 
 	#format the dictionary according to the portal API
 	object = format_data(data)
