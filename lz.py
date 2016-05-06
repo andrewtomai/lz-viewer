@@ -60,8 +60,8 @@ def check_header(filename):
 ######################################################################################################
 #########--------------------------MY SOLUTION FOR TABIX-----------------------------#################
 ##REQUIRES filename is a tabix file, names is the list of header info from the file
-##MODIFIES nothing
-##EFFECTS reads the data of filename, returns a dictionary of data
+##MODIFIES stdout
+##EFFECTS reads the data of filename using the terminal command "tabix [range]", returns a dictionary of data
 def gather_data_gzip(filename, names, start, end):
 	#initialize the dictionary with proper keys
 	data_dict = { }
@@ -84,24 +84,45 @@ def gather_data_gzip(filename, names, start, end):
 			#split up the line into a list of dats
 			data = line.split()
 			#if the data is out of range
-			if long(data[position_column]) < start or long(data[position_column]) >= end:
+			if data[position_column] <= start or data[position_column] > end:
 				continue
-			#if data is in range
-			for datum in data:
-				if current_column == num_columns:
-					current_column = 0			
-				if datum == '\t':
-					continue
-				elif datum == '\n':
-					continue
-				else:
-					data_dict = add_datum(names, current_column, datum, data_dict)
-					current_column += 1
+			else: #if data is in range
+				for datum in data:
+					if current_column == num_columns:
+						current_column = 0
+					if datum == '\t':
+						continue
+					elif datum == '\n':
+						continue
+					else:
+						data_dict = add_datum(names, current_column, datum, data_dict)
+						current_column += 1
 
 		
 	return data_dict
 
 
+
+	#get the number of columns
+	#num_columns = len(names)
+	#split the data into datum
+	#data = text.split()
+	#initialize the current column
+	#current_column = 0
+
+	#gather the data
+	#for datum in data:
+	#	if current_column == num_columns:
+	#		current_column = 0
+	#	if datum == '\t':
+	#		continue
+	#	elif datum == '\n':
+	#		continue
+
+		#add the datum to the correct key using 'add_datum'
+	#	data_dict = add_datum(names, current_column, datum, data_dict)
+	#	current_column += 1
+	#return data_dict
 
 
 
@@ -123,7 +144,6 @@ def add_datum(names, column, datum, dict):
 		#it must be a long int or an int
 		dict[names[column]].append(long(datum))
 	return dict
-
 
 ##REQUIRES names is a header list
 ##MODIFIES position_column
@@ -218,7 +238,7 @@ def api():
 	
 	#get the header of the file
 	header = check_header(filename)
-	data = gather_data_gzip(filename, header, 1, 193797)
+	data = gather_data(filename, header, 193154, 193797)
 
 	#format the dictionary according to the portal API
 	object = format_data(data)

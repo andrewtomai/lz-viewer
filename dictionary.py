@@ -1,22 +1,35 @@
-##working with dictionaries
-import json
-variant = "variant"
-position = "position"
+import gzip
+from lz import *
 
-data = {variant : [], position : []}
-data[variant].append("dubstep")
-data[variant].append("wubstep")
-data[variant].append("trubstep")
-data[position].append(1)
-data[position].append(2)
-data[position].append(3)
+header = check_header('assoc.q.lm.epacts.gz')
+print get_position(header)
+with gzip.open('assoc.q.lm.epacts.gz', 'rb') as f:
+	next(f)
+	for line in f:
+		words = line.split()
 
-new_key = {'lastPage' : None}
-object = {'data' : data, 'lastPage' : None}
-
-json_data = json.dumps(object)
-print json_data
-string  = "went to work for a thing"
-words = string.split()
-print words[0]
-print words[2]
+print words[1]
+position_column = get_position(header)
+with gzip.open('assoc.q.lm.epacts.gz', 'rb') as f:
+	#skip the header
+	next(f)
+	#loop through the lines
+	for line in f:
+		#split up the line into a list of dats
+		data = line.split()
+		#if the data is out of range
+	
+		if long(data[position_column]) < 1 or long(data[position_column]) >= 193797:
+			continue
+		#if data is in range
+		print data[position_column]
+		for datum in data:
+			if current_column == num_columns:
+				current_column = 0			
+			if datum == '\t':
+				continue
+			elif datum == '\n':
+				continue
+			else:
+				data_dict = add_datum(names, current_column, datum, data_dict)
+				current_column += 1
