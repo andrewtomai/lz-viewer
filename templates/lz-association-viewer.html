@@ -25,12 +25,12 @@
         </form>
         <br>
     </div>
-    <div id="lz-1" class="lz-locuszoom-container" data-region="11:114550452-115067678"></div>
+    <div id="lz-1" class="lz-locuszoom-container" data-region={{ region }}></div>
 
   <script type="text/javascript">
 
     // Define LocusZoom Data Sources object
-	var localBase = "http://127.0.01:5000/api/";
+	var localBase = "http://127.0.0.1:" + {{ port }} + "/api/";
     var remoteBase = "http://portaldev.sph.umich.edu/api/v1/";
     var data_sources = new LocusZoom.DataSources();
     data_sources.addSource("base", ["AssociationLZ", localBase]);

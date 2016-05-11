@@ -9,6 +9,7 @@ import re
 import gzip
 from flask import Flask, jsonify, request, render_template, url_for
 
+
 ##REQUIRES: nothing
 ##MODIFIES: file_name, port_number
 ##EFFECTS: parses the input arguments to set the correct file_name and port_number
@@ -49,7 +50,9 @@ def check_header(filename):
 		if word == "BEGIN":
 			names.append("position")
 		elif word == "MARKER_ID":
-			names.append("variant")
+			names.append("id")
+		elif word == "#CHROM":
+			names.append("chr")
 		else: 
 			names.append(word.lower())
 	return names
@@ -83,9 +86,12 @@ def gather_data_gzip(filename, names, start, end):
 		for line in f:
 			#split up the line into a list of dats
 			data = line.split()
-			#if the data is out of range
-			if long(data[position_column]) < start or long(data[position_column]) >= end:
+			#if the data is not yet in range
+			if long(data[position_column]) < start:
 				continue
+			#if the data is past the range
+			elif long(data[position_column]) >= end:
+				break
 			#if data is in range
 			for datum in data:
 				if current_column == num_columns:
@@ -226,46 +232,57 @@ def format_data(data):
 
 ##Flask initialization	
 lz_app = Flask(__name__, static_url_path='')
+@lz_app.after_request
+def after_request(response):
+	response.headers.add('Access-Control-Allow-Origin', '*')
+	response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+	response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
+	return response
+
 @lz_app.route('/')
 def home():
-	return lz_app.send_static_file('lz-association-viewer.html')
-@lz_app.route('/api', methods=['GET'])
+
+	return render_template("lz-association-viewer.html", port=port_number, region="11:114mb+150kb")
+@lz_app.route('/api/results/', methods=['GET'])
 ##REQUIRES object is a dictionary
 ##MODIFIES lz_app
 ##EFFECTS displays a json objects at route '/api'
 def api():
-	#check the input arguments
-	arguments = check_options()
-	filename = arguments["filename"]
 	
-	#get the header of the file
-	header = check_header(filename)
-	#find the minimum pval
-	minimum_position = find_min_pval(filename, header)
-	start = minimum_position - 258613
-	end = minimum_position + 258613
+	start = 113850000
+	end = 114150000
 	#if we, for some reason, did not find a minimum
 	if minimum_position == -1:
-		start = 1
-		end = 500000
+		start = 113850000
+		end = 114150000
 	#gather the data
 	data = gather_data_gzip(filename, header, start, end)
 
 	#format the dictionary according to the portal API
 	object = format_data(data)
 
-	return json.dumps(object)
+	return jsonify(object)
 
 #----------------------------------------------------------------------------------------------------#
 ######################################################################################################
 
 #(main)#
 if __name__ == '__main__':
+	
 
 	#check the input arguments
 	arguments = check_options()
-
+	global filename
+	filename = arguments["filename"]
+	global port_number
 	port_number = arguments["port_number"]
+
+	#get the header of the file
+	global header
+	header = check_header(filename)
+	#find the minimum pvalue
+	global minimum_position
+	minimum_position = find_min_pval(filename, header)
 
 	#run the flask webserver
 	lz_app.run(port = port_number)
