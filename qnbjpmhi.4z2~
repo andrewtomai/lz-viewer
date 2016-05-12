@@ -141,11 +141,19 @@ def find_block(filename, start):
 		#initialize a counter to count the current number of 16kb intervals passed
 		
 		#use the number of intervals to loop through all intervals
-		index = start/16384
+		index = start/16000
 		for x in range(0, index):
-			ioff = unpack('L', tabix.read(8))[0]
+			ioff = unpack('<L', tabix.read(8))[0]
 			
-			
+			#if we have passed the start position
+			#if( start < ioff):
+			#	break
+			#else:
+			#	counter += 1
+		
+		#multiply the interval by 16kb to get the correct byte
+		
+		#byte = (counter - 1) * 16000
 		
 		return ioff
 
@@ -174,11 +182,12 @@ def gather_data_gzip(filename, names, start, end):
 	with gzip.open(filename, 'rb') as f:
 		#skip to the correct block 
 		byte = find_block(filename, start)
-		f.seek(byte)
+		f.seek(3404)
 		
 		#loop through the lines
 		for line in f:
-			
+			print line
+			time.sleep(2)
 			#split up the line into a list of datums
 			data = line.split()
 			
@@ -349,7 +358,10 @@ if __name__ == '__main__':
 	#find the minimum pvalue
 	global minimum_position
 	minimum_position = find_min_pval(filename, header)
-
+	
+	data = create_data(open_file(filename))
+	
+	#data = gather_data_gzip(filename, header, 113850000, 114150000)
 
 	#run the flask webserver
 	lz_app.run(port = port_number)
