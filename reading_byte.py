@@ -23,20 +23,16 @@ with gzip.open("assoc.q.lm.epacts.gz.tbi", "rb") as tabix:
 
 		bin = unpack('I', tabix.read(4))[0];
 		n_chunk = unpack('i', tabix.read(4))[0];
-		outfile.write("bin: " + str(bin) + "\n")
-		outfile.write("n_chunk: " + str(n_chunk) + "\n")
-		for x in range(0, n_chunk):
-			
-			cnk_beg = unpack('l', tabix.read(8))[0];
-			cnk_end = unpack('Q', tabix.read(8))[0];
-			outfile.write("cnk_beg: %d \n" % (cnk_beg))
-			outfile.write("cnk_end: %d \n" % (cnk_end))
+		tabix.read(16*n_chunk)
 			
 	n_intv =  unpack('i', tabix.read(4))[0];
 	outfile.write("n_intv: %d" % (n_intv))
 	for x in range(0, n_intv):
-		ioff =  unpack('l', tabix.read(8))[0];
-		outfile.write("ioff: %d \n" % (ioff))
+		voffset =  unpack('H', tabix.read(2))[0]
+		offset = unpack('I', tabix.read(4))[0]
+		highbits = unpack('H', tabix.read(2))[0]
+
+		outfile.write("voffset: %d   offset: %d, \n " % (voffset, offset))
 
 
 	print tabix.read()

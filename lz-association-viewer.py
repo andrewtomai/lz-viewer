@@ -2,13 +2,13 @@
 #---------------------------------------helper functions---------------------------------------#
 
 import pysam
+import math
 import argparse
-import json
 import re 
 import gzip
-import time
 from struct import *
 from flask import Flask, jsonify, request, render_template, url_for
+
 
 
 ##REQUIRES: nothing
@@ -95,7 +95,7 @@ def add_datum(names, column, datum, dict):
 
 
 ##REQUIRES filename is a tabix file
-##MODIFIES 
+##MODIFIES IO
 ##EFFECTS finds the byte number of the best position location to start reading data
 def find_block(filename, start):
 
@@ -117,48 +117,67 @@ def find_block(filename, start):
 
 		#'names' depends on the number that represents 'l_nm'
 		field_dict['names'] = tabix.read(field_dict['l_nm'])
+		for x in range(0, field_dict['names'].count('\x00')):
+			#number of bins
+			n_bin = unpack('i', tabix.read(4))[0]
 
-		#number of bins
-		n_bin = unpack('i', tabix.read(4))[0]
-
-		#unpack all bins, using the n_bin variable
-		for x in range(0, n_bin):
-			bin = unpack('I', tabix.read(4))[0]
+			#unpack all bins, using the n_bin variable
+			for x in range(0, n_bin):
+				bin = unpack('I', tabix.read(4))[0]
 			
-			#find the number of chunks in the bin
-			n_chunk = unpack('i', tabix.read(4))[0]
-			#use the number of chunks to unpack all chunks
-			for x in range(0, n_chunk):
-				#chunk begins:
-				cnk_beg = unpack('Q', tabix.read(8))[0]
-				#chunk ends:
-				cnk_end = unpack('Q', tabix.read(8))[0]
+				#find the number of chunks in the bin
+				n_chunk = unpack('i', tabix.read(4))[0]
+				#use the number of chunks to unpack all chunks
+				for x in range(0, n_chunk):
+					#chunk begins:
+					cnk_beg = unpack('Q', tabix.read(8))[0]
+					#chunk ends:
+					cnk_end = unpack('Q', tabix.read(8))[0]
 
-		#find the number of intervals
-		n_intv = unpack('i', tabix.read(4))[0]
+			#find the number of intervals
+			n_intv = unpack('i', tabix.read(4))[0]
 
 
-		#initialize a counter to count the current number of 16kb intervals passed
+			#initialize a counter to count the current number of 16kb intervals passed
 		
-		#use the number of intervals to loop through all intervals
-		index = start/16384
-		for x in range(0, index):
-			ioff = unpack('Q', tabix.read(8))[0]
-			
-			
-		
-		return ioff
+			#find the correct 'ioff' index 
+			index = int(math.floor(start/16384))
+			#unpack the first offset
+			offset_within_block =  unpack('H', tabix.read(2))[0]
+			block_offset = unpack('I', tabix.read(4))[0]
+
+			#should have no value
+			highbits = unpack('H', tabix.read(2))[0]
+			#set the current block number to 0
+			current_block = 0
+			#set the previous block_offset to block_offset
+			prev_off = block_offset
+			for x in range(1, index):
+				offset_within_block = unpack('<H', tabix.read(2))[0]
+				block_offset = unpack('<I', tabix.read(4))[0]
+				highbits = unpack('H', tabix.read(2))[0]
+				if(block_offset > prev_off):
+					current_block += 1
+				prev_off = block_offset
+
+		return offset_within_block, current_block
 
 
 
-
+def make_voffset( current_block, offset_within_block ):
+	return (current_block << 16) | offset_within_block
 
 
 ##REQUIRES filename is a tabix file, names is the list of header info from the file
 ##MODIFIES nothing
 ##EFFECTS reads the data of filename, returns a dictionary of data
 def gather_data_gzip(filename, names, start, end):
+	
+	offset_within_block, current_block = find_block(filename, start)
+	offset = make_voffset(current_block, offset_within_block)
+	
 	#initialize the dictionary with proper keys
+
 	data_dict = { }
 	for name in names:
 		data_dict[name] = []
@@ -173,18 +192,19 @@ def gather_data_gzip(filename, names, start, end):
 	
 	with gzip.open(filename, 'rb') as f:
 		#skip to the correct block 
-		byte = find_block(filename, start)
-		f.seek(byte)
+		f.seek(offset)
+		if offset == 0:
+			f.next()
 		
 		#loop through the lines
 		for line in f:
-			print line
-			time.sleep(1)
+			
 			#split up the line into a list of datums
 			data = line.split()
 			
 			#if the data is not yet in range
 			if long(data[position_column]) < start:
+				print line
 				continue
 			#if the data is past the range
 			elif long(data[position_column]) >= end:
@@ -248,7 +268,7 @@ def create_data(file):
 	#looping through the specific region of the tabix file
 	for row in file.fetch(11, 113850000, 114150000):
 		#splitting the row up into individual words
-		print row
+
 		words = row.split()
 		#adding the data to the dictionary
 		data[variant].append(words[3])
@@ -351,6 +371,6 @@ if __name__ == '__main__':
 	global minimum_position
 	minimum_position = find_min_pval(filename, header)
 
-	data = gather_data_gzip(filename, header, 113850000, 114150000)
+	
 	#run the flask webserver
 	lz_app.run(port = port_number)
