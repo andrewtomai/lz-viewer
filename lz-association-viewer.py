@@ -19,16 +19,14 @@ from flask import Flask, jsonify, request, render_template, url_for
 ##EFFECTS: parses the input arguments to set the correct file_name and port_number
 def check_options():
 	#initialize the parser with description
-	parser = argparse.ArgumentParser(description="Open input_file and view it on the specified or default port")
+	parser = argparse.ArgumentParser(description="Open input_file and view it on the specified or default port, with a default data range based off of the minimum p-value")
 	#add the port argument
 	parser.add_argument("-p", "--port", help="Specify a port at which to view results", type=int)
 	#add the filename argument
 	parser.add_argument("filename", type=str, help="Provide the name of the file to be graphed")
-	range_set = parser.add_mutually_exclusive_group()
+	
 	#add the range argument
-	range_set.add_argument("-r", "--range", type=str, help="Provide the range of positions to grab of format: [CHROMOSOME #]:[START]-[END]")
-	#add the base range off of minimum argument
-	range_set.add_argument("-m", "--minimum", help="Option to select if the range should be based off of the minimum p-value", action ='store_true')
+	parser.add_argument("-r", "--range", type=str, help="Provide the range of positions to grab of format: [CHROMOSOME #]:[START]-[END]")
 	#parse the arguments
 	args = parser.parse_args()
 	#set the filename
@@ -39,15 +37,18 @@ def check_options():
 
 	else: #otherwise the default port is 5000
 		port_number = 5000
+		
+	minimum = False 
+	range = None
 	#if a range was specified
 	if args.range:
 		range = args.range
-	else: #otherwise the default range is 11:113850000-114150000
-		range = "11:113850000-114150000"
+	else: #otherwise the default range is set to be based off of the minimum p-value
+		minimum = True
 
 
 	#return a dictionary including the filename and port number
-	return {'filename' : file, 'port_number' : port_number, 'range' : range, 'minimum' : args.minimum}
+	return {'filename' : file, 'port_number' : port_number, 'range' : range, 'minimum' : minimum}
 
 
 ##REQUIRES filename is a tabix file
@@ -173,11 +174,7 @@ def find_block(filename, start, end, chrom_in):
 				highbits = unpack('H', tabix.read(2))[0]
 			
 			end_index = int(math.floor(end/16384))
-			#find the end offset so that we do not decompress un-needed data	
-			for x in range(index, end_index + 1):
-				null_offset = unpack('<H', tabix.read(2))[0]
-				end_offset = unpack('<I', tabix.read(4))[0]
-				highbits = unpack('H', tabix.read(2))[0]
+			
 				
 
 			#if we are at the correct chromosome
@@ -185,7 +182,7 @@ def find_block(filename, start, end, chrom_in):
 				break
 
 
-		return offset_within_block, block_offset, end_offset
+		return offset_within_block, block_offset
 
 
 	##REQUIRES stream is a gzip compressed string
@@ -224,7 +221,7 @@ def gather_data_gzip(filename, names, start, end, chrom_in):
 
 
 	#Get the offset information for the range we want
-	offset_within_block, block_offset, end_offset = find_block(filename, start, end, chrom_in)
+	offset_within_block, block_offset = find_block(filename, start, end, chrom_in)
 
 	#skip to the block_offset of the compressed file
 	with open(filename, 'rb') as compressed:
@@ -396,13 +393,7 @@ if __name__ == '__main__':
 	global start
 	global end
 
-
-	range_list = re.split('[:-]', range_opt)
-	chromosome = int(range_list[0])
-	start = long(range_list[1])
-	end = long(range_list[2])
-	
-	#find the minimum pvalue
+#find the minimum pvalue
 	if minimum:
 
 		minimum_chromosome, minimum_position = find_min_pval(filename, header)
@@ -410,7 +401,13 @@ if __name__ == '__main__':
 		chromosome = minimum_chromosome
 		start = minimum_position-150000
 		end = minimum_position+150000
-		
+
+	else: #if we have a custom range
+		range_list = re.split('[:-]', range_opt)
+		chromosome = int(range_list[0])
+		start = long(range_list[1])
+		end = long(range_list[2])
+	
 	
 	
 	#run the flask webserver
