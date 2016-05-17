@@ -6,6 +6,9 @@ import math
 import argparse
 import re 
 import gzip
+import zlib
+import time
+from cStringIO import StringIO
 from struct import *
 from flask import Flask, jsonify, request, render_template, url_for
 
@@ -97,7 +100,7 @@ def add_datum(names, column, datum, dict):
 ##REQUIRES filename is a tabix file
 ##MODIFIES IO
 ##EFFECTS finds the byte number of the best position location to start reading data
-def find_block(filename, start):
+def find_block(filename, start, end, chrom_in):
 
 	#open the tabix (BGZF compressed) file
 	with gzip.open(filename + '.tbi', 'rb') as tabix:
@@ -117,7 +120,10 @@ def find_block(filename, start):
 
 		#'names' depends on the number that represents 'l_nm'
 		field_dict['names'] = tabix.read(field_dict['l_nm'])
-		for x in range(0, field_dict['names'].count('\x00')):
+		chromosomes = field_dict['names'].split('\x00')
+		
+		for chromosome in chromosomes:
+			
 			#number of bins
 			n_bin = unpack('i', tabix.read(4))[0]
 
@@ -148,24 +154,41 @@ def find_block(filename, start):
 
 			#should have no value
 			highbits = unpack('H', tabix.read(2))[0]
-			#set the current block number to 0
-			current_block = 0
-			#set the previous block_offset to block_offset
-			prev_off = block_offset
+			#find the correct start offsets
 			for x in range(1, index):
 				offset_within_block = unpack('<H', tabix.read(2))[0]
 				block_offset = unpack('<I', tabix.read(4))[0]
 				highbits = unpack('H', tabix.read(2))[0]
-				if(block_offset > prev_off):
-					current_block += 1
-				prev_off = block_offset
+			
+			end_index = int(math.floor(end/16384))
+			#find the end offset so that we do not decompress un-needed data	
+			for x in range(index, end_index + 1):
+				null_offset = unpack('<H', tabix.read(2))[0]
+				end_offset = unpack('<I', tabix.read(4))[0]
+				highbits = unpack('H', tabix.read(2))[0]
+				
 
-		return offset_within_block, current_block
+			#if we are at the correct chromosome
+			if int(chromosome) == chrom_in:
+				break
 
 
+		return offset_within_block, block_offset, end_offset
 
-def make_voffset( current_block, offset_within_block ):
-	return (current_block << 16) | offset_within_block
+
+	##REQUIRES stream is a gzip compressed string
+	##MODIFIES 
+	##EFFECTS decrompresses the gzipped string, and returns the decompressed string
+def stream_gzip_decompress(stream):
+	# skip the header of the compressed string
+	dec = zlib.decompressobj(32 + zlib.MAX_WBITS)
+	#decrompress the stream
+	rv = dec.decompress(stream)
+	#make sure the string isnt NULL
+	if rv:
+		return rv
+
+
 
 
 ##REQUIRES filename is a tabix file, names is the list of header info from the file
@@ -173,11 +196,8 @@ def make_voffset( current_block, offset_within_block ):
 ##EFFECTS reads the data of filename, returns a dictionary of data
 def gather_data_gzip(filename, names, start, end):
 	
-	offset_within_block, current_block = find_block(filename, start)
-	offset = make_voffset(current_block, offset_within_block)
-	
+		
 	#initialize the dictionary with proper keys
-
 	data_dict = { }
 	for name in names:
 		data_dict[name] = []
@@ -189,37 +209,49 @@ def gather_data_gzip(filename, names, start, end):
 	#get the number of columns
 	num_columns = len(names)
 	#open the gzip file
-	
-	with gzip.open(filename, 'rb') as f:
-		#skip to the correct block 
-		f.seek(offset)
-		if offset == 0:
-			f.next()
+
+
+	#Get the offset information for the range we want
+	offset_within_block, block_offset, end_offset = find_block(filename, start, end, 11)
+
+	#skip to the block_offset of the compressed file
+	with open(filename, 'rb') as compressed:
+		compressed.seek(block_offset)
+		block = compressed.read()
+
+	#create a decompressed StringIO from the compressed data
+	decompressed = StringIO(stream_gzip_decompress(block))
+	#skip to the relevant data within the block
+	decompressed.seek(offset_within_block)
+	#if there was no offset, we need to skip the header
+	if offset_within_block == 0 & block_offset == 0:
+		decompressed.next()
+	 
+
+	#loop through the lines
+	for line in decompressed:
+			
+		#split up the line into a list of datums
+		data = line.split()
 		
-		#loop through the lines
-		for line in f:
-			
-			#split up the line into a list of datums
-			data = line.split()
-			
-			#if the data is not yet in range
-			if long(data[position_column]) < start:
-				print line
+		#if the data is not yet in range
+		if long(data[position_column]) < start:
+			print line
+			continue
+		#if the data is past the range
+		elif long(data[position_column]) >= end:
+			break
+		#if data is in range
+		for datum in data:
+			if current_column == num_columns:
+				current_column = 0			
+			if datum == '\t':
 				continue
-			#if the data is past the range
-			elif long(data[position_column]) >= end:
-				break
-			#if data is in range
-			for datum in data:
-				if current_column == num_columns:
-					current_column = 0			
-				if datum == '\t':
-					continue
-				elif datum == '\n':
-					continue
-				else:
-					data_dict = add_datum(names, current_column, datum, data_dict)
-					current_column += 1
+			elif datum == '\n':
+				continue
+			else:
+				data_dict = add_datum(names, current_column, datum, data_dict)
+				current_column += 1
 
 		
 	return data_dict
@@ -242,44 +274,7 @@ def gather_data_gzip(filename, names, start, end):
 
 
 
-#################################################################################################
-#############-------------------PYSAM SOLUTION FOR TABIX---------------------####################
-##REQUIRES: file_name is a TABIX file
-##MODIFIES: file
-##EFFECTS: opens the TABIX formatted file using pysam 
-def open_file(filename):
-	#open the tabix file
-	file = pysam.TabixFile(filename)
-	return file
 
-
-
-
-##REQUIRES file is a pysam tabix file
-##MODIFIES data
-##EFFECTS creates a data dictionary by iterating through the tabix file
-def create_data(file):
-	#setting values of keys
-	variant = "variant"
-	position = "position"
-	pvalue = "pvalue"
-	#initializing the data dictionary
-	data = { pvalue : [], position : [], variant : [] }
-	#looping through the specific region of the tabix file
-	for row in file.fetch(11, 113850000, 114150000):
-		#splitting the row up into individual words
-
-		words = row.split()
-		#adding the data to the dictionary
-		data[variant].append(words[3])
-		if words[8] == 'NA': data[pvalue].append(None)
-		else: data[pvalue].append(float(words[8]))
-
-		data[position].append(long(words[1]))
-		
-	return data
-##################---------------------------------------------------------------#################
-##################################################################################################
 
 ##REQUIRES filename is a tabix file, names is the header of the file
 ##MODIFIES nothing
@@ -308,6 +303,15 @@ def find_min_pval(filename, names):
 	return current_position
 
 
+
+
+
+
+
+
+
+
+
 ##REQUIRES data is a dictionary 
 ##MODIFIES data
 ##EFFECTS adds necessary 'lastPage' key to the dictionary  
@@ -317,7 +321,12 @@ def format_data(data):
 
 
 
-##Flask initialization	
+
+
+
+
+#########################################################################################################
+#--------------------------------------Flask initialization---------------------------------------------#	
 lz_app = Flask(__name__, static_url_path='')
 @lz_app.after_request
 def after_request(response):
