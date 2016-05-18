@@ -161,28 +161,59 @@ def find_block(filename, start, end, chrom_in):
 		
 			#find the correct 'ioff' index 
 			index = int(math.floor(start/16384))
+			#find the correct index of 'ioff' for the end position
+			end_index = int(math.floor(end/16384))
+			
 			#unpack the first offset
 			offset_within_block =  unpack('H', tabix.read(2))[0]
 			block_offset = unpack('I', tabix.read(4))[0]
 
 			#should have no value
 			highbits = unpack('H', tabix.read(2))[0]
-			#find the correct start offsets
-			for x in range(1, index):
-				offset_within_block = unpack('<H', tabix.read(2))[0]
-				block_offset = unpack('<I', tabix.read(4))[0]
-				highbits = unpack('H', tabix.read(2))[0]
+		
 			
-			end_index = int(math.floor(end/16384))
+			#loop through the ioff's, until we get the index of the end position
+			for x in range(1, end_index):
+				#if we havent gotten to the start index yet
+				if x < index:
+					offset_within_block = unpack('<H', tabix.read(2))[0]
+					block_offset = unpack('<I', tabix.read(4))[0]
+					highbits = unpack('H', tabix.read(2))[0]
+
+				#if we have gotten or surpassed the start index
+				elif x >= index:
+					lowbits = tabix.read(2)
+					if lowbits == '':
+						end_actual_offset = -1
+						break
+					else: 
+						lowbits = unpack('<H', lowbits)[0]
+						end_actual_offset = unpack('<I', tabix.read(4))[0]
+						highbits = unpack('H', tabix.read(2))[0]
 			
+			#now find the offset of the block one after the end block
+			end_offset = end_actual_offset	
 				
+			while end_offset == end_actual_offset:
+				lowbits = tabix.read(2)
+				if lowbits == '':
+					end_offset = -1
+					break
+				else:
+					lowbits = unpack('H', lowbits)[0]
+					end_offset = unpack('<I', tabix.read(4))[0]
+					highbits = unpack('H', tabix.read(2))[0]
+				#if the end_offset is empty, then the last block is also the block containing the end
+				if end_offset == '':
+					end_offset = -1
+					break
 
 			#if we are at the correct chromosome
 			if int(chromosome) == chrom_in:
 				break
-
-
-		return offset_within_block, block_offset
+			
+		
+		return offset_within_block, block_offset, end_offset
 
 
 	##REQUIRES stream is a gzip compressed string
@@ -221,12 +252,16 @@ def gather_data_gzip(filename, names, start, end, chrom_in):
 
 
 	#Get the offset information for the range we want
-	offset_within_block, block_offset = find_block(filename, start, end, chrom_in)
-
+	offset_within_block, block_offset, end_offset = find_block(filename, start, end, chrom_in)
 	#skip to the block_offset of the compressed file
 	with open(filename, 'rb') as compressed:
 		compressed.seek(block_offset)
-		block = compressed.read()
+		#if the end position is in the last block
+		if end_offset == -1:
+			block = compressed.read()
+		#otherwise, only read the least amount of data to decompress
+		else: 
+			block = compressed.read(end_offset - block_offset + 1)
 
 	#create a decompressed StringIO from the compressed data
 	decompressed = StringIO(stream_gzip_decompress(block))
@@ -409,6 +444,7 @@ if __name__ == '__main__':
 		end = long(range_list[2])
 	
 	
+
 	
 	#run the flask webserver
 	lz_app.run(port = port_number)
