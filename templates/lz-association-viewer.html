@@ -38,8 +38,26 @@
     data_sources.addSource("gene", ["GeneLZ", { url: remoteBase + "annotation/genes/", params: {source: 2} }]);
 
 
+ 
+    var my_layout = {
+    	panels: {
+    		positions: {
+    			data_layers: {
+    				positions: {
+    					tooltip: {
+    						html: "<strong>{{id}}</strong>"
+    					}
+    				}
+    			}
+    		}
+    	}
+    };
+	
+    var layout = LocusZoom.mergeLayouts(my_layout, LocusZoom.DefaultLayout);
+
+
     // Populate the div with a LocusZoom plot using the default layout
-    var demo_instance = LocusZoom.populate("#lz-1", data_sources);
+    var demo_instance = LocusZoom.populate("#lz-1", data_sources, layout);
 
 
     // Apply form data to a remapping of the demo LocusZoom instance
