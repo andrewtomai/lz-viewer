@@ -110,110 +110,141 @@ def add_datum(names, column, datum, dict):
 	return dict
 
 
+
+
+
+
+##REQUIRES filename has an associated tabix file
+##MODIFIES nothing
+##EFFECTS creates a file object from the tabix file
+def open_tabix(filename):
+	tabix = gzip.open(filename + '.tbi', 'rb')
+	return tabix
+
+
+
+
+
+
+
+##REQUIRES tabix is a .tbi file object
+##MODIFIES nothing
+##EFFECTS creates a dictionary of the tabix header fields
+def get_tabix_fields(tabix):
+	fields = ['magic', 'n_ref', 'format', 'col_seq', 'col_beg', 'col_end', 'meta', 'skip', 'l_nm', 'names']
+	field_dict= { }
+
+	for x in range(0, 9):
+		#read in four bytes of data
+		information = tabix.read(4)
+		#if this is the first read, the information is of type char
+		if x == 0:
+			field_dict[fields[x]] = information
+		#otherwise, the information is an integer
+		else:
+			information = unpack('i', information)[0];
+			field_dict[fields[x]] = information
+
+	#'names' depends on the number that represents 'l_nm'
+	field_dict['names'] = tabix.read(field_dict['l_nm'])
+
+	return field_dict
+	
+
+
+
+
 ##REQUIRES filename is a tabix file
 ##MODIFIES IO
 ##EFFECTS finds the byte number of the best position location to start reading data
 def find_block(filename, start, end, chrom_in):
 
 	#open the tabix (BGZF compressed) file
-	with gzip.open(filename + '.tbi', 'rb') as tabix:
-		fields = ['magic', 'n_ref', 'format', 'col_seq', 'col_beg', 'col_end', 'meta', 'skip', 'l_nm', 'names']
-		field_dict= { }
-
-		for x in range(0, 9):
-			#read in four bytes of data
-			information = tabix.read(4)
-			#if this is the first read, the information is of type char
-			if x == 0:
-				field_dict[fields[x]] = information
-			#otherwise, the information is an integer
-			else:
-				information = unpack('i', information)[0];
-				field_dict[fields[x]] = information
-
-		#'names' depends on the number that represents 'l_nm'
-		field_dict['names'] = tabix.read(field_dict['l_nm'])
-		chromosomes = field_dict['names'].split('\x00')
+	tabix = open_tabix(filename)
+	#get the fields for the tabix file
+	field_dict = get_tabix_fields(tabix)
+	#get the list of chromosomes from the fields dictionary
+	chromosomes = field_dict['names'].split('\x00')
 		
-		for chromosome in chromosomes:
+	for chromosome in chromosomes:
 			
-			#number of bins
-			n_bin = unpack('i', tabix.read(4))[0]
+		#number of bins
+		n_bin = unpack('i', tabix.read(4))[0]
 
-			#unpack all bins, using the n_bin variable
-			for x in range(0, n_bin):
-				bin = unpack('I', tabix.read(4))[0]
+		#unpack all bins, using the n_bin variable
+		for x in range(0, n_bin):
+			bin = unpack('I', tabix.read(4))[0]
 			
-				#find the number of chunks in the bin
-				n_chunk = unpack('i', tabix.read(4))[0]
-				#use the number of chunks to unpack all chunks
-				for x in range(0, n_chunk):
-					#chunk begins:
-					cnk_beg = unpack('Q', tabix.read(8))[0]
-					#chunk ends:
-					cnk_end = unpack('Q', tabix.read(8))[0]
+			#find the number of chunks in the bin
+			n_chunk = unpack('i', tabix.read(4))[0]
+			#use the number of chunks to unpack all chunks
+			for x in range(0, n_chunk):
+				#chunk begins:
+				cnk_beg = unpack('Q', tabix.read(8))[0]
+				#chunk ends:
+				cnk_end = unpack('Q', tabix.read(8))[0]
 
-			#find the number of intervals
-			n_intv = unpack('i', tabix.read(4))[0]
+		#find the number of intervals
+		n_intv = unpack('i', tabix.read(4))[0]
 
 
-			#initialize a counter to count the current number of 16kb intervals passed
+		#initialize a counter to count the current number of 16kb intervals passed
 		
-			#find the correct 'ioff' index 
-			index = int(math.floor(start/16384))
-			#find the correct index of 'ioff' for the end position
-			end_index = int(math.floor(end/16384))
+		#find the correct 'ioff' index 
+		index = int(math.floor(start/16384))
+		#find the correct index of 'ioff' for the end position
+		end_index = int(math.floor(end/16384))
 			
-			#unpack the first offset
-			offset_within_block =  unpack('H', tabix.read(2))[0]
-			block_offset = unpack('I', tabix.read(4))[0]
+		#unpack the first offset
+		offset_within_block =  unpack('H', tabix.read(2))[0]
+		block_offset = unpack('I', tabix.read(4))[0]
 
-			#should have no value
-			highbits = unpack('H', tabix.read(2))[0]
+		#should have no value
+		highbits = unpack('H', tabix.read(2))[0]
 		
 			
-			#loop through the ioff's, until we get the index of the end position
-			for x in range(1, end_index):
-				#if we havent gotten to the start index yet
-				if x < index:
-					offset_within_block = unpack('<H', tabix.read(2))[0]
-					block_offset = unpack('<I', tabix.read(4))[0]
-					highbits = unpack('H', tabix.read(2))[0]
+		#loop through the ioff's, until we get the index of the end position
+		for x in range(1, end_index):
+			#if we havent gotten to the start index yet
+			if x < index:
+				offset_within_block = unpack('<H', tabix.read(2))[0]
+				block_offset = unpack('<I', tabix.read(4))[0]
+				highbits = unpack('H', tabix.read(2))[0]
 
-				#if we have gotten or surpassed the start index
-				elif x >= index:
-					lowbits = tabix.read(2)
-					if lowbits == '':
-						end_actual_offset = -1
-						break
-					else: 
-						lowbits = unpack('<H', lowbits)[0]
-						end_actual_offset = unpack('<I', tabix.read(4))[0]
-						highbits = unpack('H', tabix.read(2))[0]
-			
-			#now find the offset of the block one after the end block
-			end_offset = end_actual_offset	
-				
-			while end_offset == end_actual_offset:
+			#if we have gotten or surpassed the start index
+			elif x >= index:
 				lowbits = tabix.read(2)
 				if lowbits == '':
-					end_offset = -1
+					end_actual_offset = -1
 					break
-				else:
-					lowbits = unpack('H', lowbits)[0]
-					end_offset = unpack('<I', tabix.read(4))[0]
+				else: 
+					lowbits = unpack('<H', lowbits)[0]
+					end_actual_offset = unpack('<I', tabix.read(4))[0]
 					highbits = unpack('H', tabix.read(2))[0]
-				#if the end_offset is empty, then the last block is also the block containing the end
-				if end_offset == '':
-					end_offset = -1
-					break
-
-			#if we are at the correct chromosome
-			if int(chromosome) == chrom_in:
+			
+		#now find the offset of the block one after the end block
+		end_offset = end_actual_offset	
+				
+		while end_offset == end_actual_offset:
+			lowbits = tabix.read(2)
+			if lowbits == '':
+				end_offset = -1
 				break
+			else:
+				lowbits = unpack('H', lowbits)[0]
+				end_offset = unpack('<I', tabix.read(4))[0]
+				highbits = unpack('H', tabix.read(2))[0]
+			#if the end_offset is empty, then the last block is also the block containing the end
+			if end_offset == '':
+				end_offset = -1
+				break
+
+		#if we are at the correct chromosome
+		if int(chromosome) == chrom_in:
+			break
 			
 		
-		return offset_within_block, block_offset, end_offset
+	return offset_within_block, block_offset, end_offset
 
 
 	##REQUIRES stream is a gzip compressed string
@@ -253,6 +284,7 @@ def gather_data_gzip(filename, names, start, end, chrom_in):
 
 	#Get the offset information for the range we want
 	offset_within_block, block_offset, end_offset = find_block(filename, start, end, chrom_in)
+	
 	#skip to the block_offset of the compressed file
 	with open(filename, 'rb') as compressed:
 		compressed.seek(block_offset)

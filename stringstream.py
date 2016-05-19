@@ -2,13 +2,12 @@ from cStringIO import StringIO
 import zlib
 import io
 import re
+import gzip
 
-filename = 'test_file.txt'
-with open(filename, 'rb') as f:
-
-	file = f.read()
-	hype = f.read(1)
-	if hype == '':
-		print "HYPESWEG"
+filename = 'assoc.q.lm.epacts.gz'
+with gzip.open(filename, 'rb') as f:
+	outfile = open("assoc.txt", 'w')
+	for line in f:
+		outfile.write(line + '\n')
 
 
