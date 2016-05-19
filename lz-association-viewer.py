@@ -98,6 +98,9 @@ def add_datum(names, column, datum, dict):
 	#the datum should be stored as NULL
 	if datum == "NA":
 		dict[names[column]].append(None)
+		#then the datum is a scientifically notated float
+	elif (re.search('[a-zA-Z]', datum.replace('e', '')) == None) & (datum.count('e') == 1):
+		dict[names[column]].append(float(datum))
 	elif re.search('[a-zA-Z]', datum) != None:
 		#then its the name of a variant
 		dict[names[column]].append(datum)
@@ -275,6 +278,7 @@ def gather_data_gzip(filename, names, start, end, chrom_in):
 
 	#get the column of positions
 	position_column = get_column(names, "position")
+	pval_column = get_column(names, "pvalue")
 	#set the current column to 0
 	current_column = 0
 	#get the number of columns
@@ -315,6 +319,9 @@ def gather_data_gzip(filename, names, start, end, chrom_in):
 		#if the data is past the range
 		elif long(data[position_column]) >= end:
 			break
+		#if the pvalue is not available
+		if data[pval_column] == 'NA':
+			continue
 		#if data is in range
 		for datum in data:
 			if current_column == num_columns:
@@ -345,7 +352,8 @@ def gather_data_gzip(filename, names, start, end, chrom_in):
 
 
 
-
+#################################################################################################
+########-------------------------------solution for minimums----------------------------#########
 
 
 
@@ -353,7 +361,7 @@ def gather_data_gzip(filename, names, start, end, chrom_in):
 ##REQUIRES filename is a tabix file, names is the header of the file
 ##MODIFIES nothing
 ##EFFECTS finds the position of the minimum pvalue
-def find_min_pval(filename, names):
+def find_min_pvals(filename, names, num_minimums, region_buffer):
 	#get the column of the pvals
 	pval_column = get_column(names, "pvalue")
 	#get the column of positions
@@ -363,33 +371,98 @@ def find_min_pval(filename, names):
 
 	#open the file
 	with gzip.open(filename, 'rb') as f:
+		#skip the header
 		next(f)
-		#set baselines for current position and min
-		current_min = 1
-		current_position = -1
-		current_chrom = -1
-		#find the minimum element's position
+		#create the minimums dictionary
+		minimums = create_baseline_minimums(num_minimums)
+		#find the highest of the minimums
+
+		highest_min, highest_min_index = find_highest_min(minimums, num_minimums)
+		#loops through the lines in the file
 		for line in f:
 			data = line.split()
-			
-			if data[pval_column] == "NA":
+			if data[pval_column] == 'NA':
 				continue
-			
-			if float(data[pval_column]) < current_min:
-				current_min = float(data[pval_column])
-				current_position = long(data[position_column])
-				current_chrom = int(data[chrom_column])
-	return current_chrom, current_position
+			#if the current pvalue is greater or equal to the highest minimum, we do not add it to the dictionary
+			elif float(data[pval_column]) >= highest_min:
+				continue
+			#if the current pvalue should (possibly) be added to the dictionary of mins
+			else:
+				shares_region, shared_index = index_of_shared_region(minimums, num_minimums, long(data[position_column]), region_buffer)
+				if shares_region:
+					if float(data[pval_column]) < minimums['value'][shared_index]:
+						minimums = replace_minimum(minimums, long(data[position_column]), float(data[pval_column]), int(data[chrom_column]), shared_index)
+						highest_min, highest_min_index = find_highest_min(minimums, num_minimums)
+					else:
+						continue
+				else:
+					minimums = replace_minimum(minimums, long(data[position_column]), float(data[pval_column]), int(data[chrom_column]), highest_min_index)
+					highest_min, highest_min_index = find_highest_min(minimums, num_minimums)
+	
+	return minimums
 
 
+##REQUIRES minimums has at least 1 minimum
+##MODIFIES minimums
+##EFFECTS returns an updated dictionary of minimums
+def replace_minimum(minimums, position, pvalue, chromosome, index):
+	minimums['position'][index] = position
+	minimums['value'][index] = pvalue
+	minimums['chromosome'][index] = chromosome
+	return minimums
 
 
+##REQUIRES minimums has at least 1 minimum
+##MODIFIES nothing
+##EFFECTS returns a bool and a index, denoting that the current position is within a certain buffer region of another minimum
+def index_of_shared_region(minimums, num_minimums, position, region_buffer):
+	for x in range(0, num_minimums):
+		position_diff = abs( position - minimums['position'][x] )
+		if position_diff < region_buffer:
+			return True, x
+	return False, -1
 
 
+##REQUIRES minimums has a least one 'minimum' in it 
+##MODIFIES
+##EFFECTS returns the highest minimum and the index it is stored at
+def find_highest_min(minimums, num_minimums):
+	current_max = 0
+	
+	for x in range(0, num_minimums):
+		if minimums['value'][x] > current_max:
+			current_max = minimums['value'][x]
+			current_position = x
+	return current_max, current_position
 
 
+##REQUIRES num_minimums is > 0
+##MODIFIES nothing
+##EFFECTS creates a minimums dictionary, including position, value and chromosome
+def create_baseline_minimums(num_minimums):
+	minimums = {'position' : [], 'value' : [], 'chromosome' : [] }
+	for x in range( 0 , num_minimums ):
+		minimums['position'].append(-1000000)
+		minimums['value'].append(1)
+		minimums['chromosome'].append(0)
+	
+	return minimums 
+
+########-----------------------------------------------------------------------------------------########
+#########################################################################################################
 
 
+def find_min_of_mins(minimums):
+	current_min = 1
+	counter = 0
+	for min in minimums['value']:
+
+		if current_min > min:
+			current_min = min
+			current_position = counter
+
+		counter += 1
+	return current_position
 
 ##REQUIRES data is a dictionary 
 ##MODIFIES data
@@ -397,7 +470,6 @@ def find_min_pval(filename, names):
 def format_data(data):
 	new_dict = {'data' : data, 'lastPage' : None}
 	return new_dict
-
 
 
 
@@ -462,8 +534,12 @@ if __name__ == '__main__':
 
 #find the minimum pvalue
 	if minimum:
+		minimums = find_min_pvals(filename, header, 10, 102400)
+		min_index = find_min_of_mins(minimums)
 
-		minimum_chromosome, minimum_position = find_min_pval(filename, header)
+		minimum_chromosome = minimums['chromosome'][min_index]
+		minimum_position = minimums['position'][min_index]
+
 		range_opt = str(minimum_chromosome) + ":" + str(minimum_position) + "+150kb" 
 		chromosome = minimum_chromosome
 		start = minimum_position-150000
@@ -476,7 +552,7 @@ if __name__ == '__main__':
 		end = long(range_list[2])
 	
 	
-
+	data = gather_data_gzip(filename, header, start, end, chromosome)
 	
 	#run the flask webserver
 	lz_app.run(port = port_number)

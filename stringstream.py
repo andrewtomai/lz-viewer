@@ -3,11 +3,7 @@ import zlib
 import io
 import re
 import gzip
+import re
 
-filename = 'assoc.q.lm.epacts.gz'
-with gzip.open(filename, 'rb') as f:
-	outfile = open("assoc.txt", 'w')
-	for line in f:
-		outfile.write(line + '\n')
-
-
+sentence = "hello my name is andrew"
+print sentence.replace('e', '')
