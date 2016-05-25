@@ -14,6 +14,7 @@ from flask import Flask, jsonify, request, render_template, url_for
 
 
 
+
 ##REQUIRES: nothing
 ##MODIFIES: file_name, port_number
 ##EFFECTS: parses the input arguments to set the correct file_name and port_number
@@ -451,7 +452,9 @@ def create_baseline_minimums(num_minimums):
 ########-----------------------------------------------------------------------------------------########
 #########################################################################################################
 
-
+##REQUIRES minimums is a dictionary of minimums
+##MODIFIES nothing
+##EFFECTS finds the index of the minimum of the minimums
 def find_min_of_mins(minimums):
 	current_min = 1
 	counter = 0
@@ -472,6 +475,35 @@ def format_data(data):
 	return new_dict
 
 
+##REQUIRES filter is a query string 
+##MODIFIES nothing
+##EFFECTS returns the value of the given parameter from the filter string
+def parse_query(filter):
+	#split the filter into a list
+	filter = filter.split()
+	#initialize a counter to 0
+	counter = 0
+	#loop through the filter list
+	for piece in filter:
+		#if we find the word chromosome, we know that the nubmer of the chromosome is 2 after that
+		if piece == 'chromosome':
+			counter_chrom = counter + 2
+		#denotes a start position
+		elif piece == 'ge':
+			counter_start = counter + 1
+		#denotes an end position
+		elif piece == 'le':
+			counter_end = counter + 1
+		counter += 1
+
+	
+	chromosome = int(filter[counter_chrom].strip("'"))
+	
+	start = long(filter[counter_start])
+	
+	end = long(filter[counter_end])
+	return chromosome, start, end
+
 
 
 
@@ -488,14 +520,29 @@ def after_request(response):
 
 @lz_app.route('/')
 def home():
-
-	return render_template("lz-association-viewer.html", port=port_number, region=range_opt)
+	
+	return render_template("lz-association-viewer.html", port=port_number, region=range_opt, hits=hits)
 @lz_app.route('/api/results/', methods=['GET'])
 ##REQUIRES object is a dictionary
 ##MODIFIES lz_app
 ##EFFECTS displays a json objects at route '/api'
 def api():
 	
+	#get the filter query string
+	filter = request.args.get('filter')
+	
+	#if we have a query string, we need to update the chromosome and position information
+	if filter:
+		chromosome, start, end = parse_query(filter)
+		chrom_pos_dict['chromosome'] = chromosome
+		chrom_pos_dict['start'] = start
+		chrom_pos_dict['end'] = end
+
+	#if there is no filter, then we know the user is trying to access api endpoint	
+	else:
+		chromosome = chrom_pos_dict['chromosome']
+		start = chrom_pos_dict['start']
+		end = chrom_pos_dict['end']
 
 	#gather the data
 	data = gather_data_gzip(filename, header, start, end, chromosome)
@@ -528,31 +575,35 @@ if __name__ == '__main__':
 	global header
 	header = check_header(filename)
 
-	global chromosome
-	global start
-	global end
 
+	#find the minimums
+	minimums = find_min_pvals(filename, header, 10, 102400)
+	
+	#create a list of 'hits'
+	global hits
+	hits = []
+	
+	##create the hits list for flask
+	for x in range(0, 10):
+		chr = minimums['chromosome'][x]
+		chr = str(chr)
+		pos = minimums['position'][x]
+		pos = str(pos)
+		hits.append([chr + ":" + pos, "NAME" + str(x)])
+	
 #find the minimum pvalue
 	if minimum:
-		minimums = find_min_pvals(filename, header, 10, 102400)
 		min_index = find_min_of_mins(minimums)
 
 		minimum_chromosome = minimums['chromosome'][min_index]
 		minimum_position = minimums['position'][min_index]
 
 		range_opt = str(minimum_chromosome) + ":" + str(minimum_position) + "+150kb" 
-		chromosome = minimum_chromosome
-		start = minimum_position-150000
-		end = minimum_position+150000
-
-	else: #if we have a custom range
-		range_list = re.split('[:-]', range_opt)
-		chromosome = int(range_list[0])
-		start = long(range_list[1])
-		end = long(range_list[2])
+	#create a dictionary that contains the most recent called chromosome and positions
+	global chrom_pos_dict
+	chrom_pos_dict = {'chromosome': 11, 'start': 1, 'end': 2}
 	
 	
-	data = gather_data_gzip(filename, header, start, end, chromosome)
 	
 	#run the flask webserver
-	lz_app.run(port = port_number)
+	lz_app.run(port = port_number, debug=True, threaded=True)
