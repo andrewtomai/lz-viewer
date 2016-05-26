@@ -589,7 +589,7 @@ if __name__ == '__main__':
 		chr = str(chr)
 		pos = minimums['position'][x]
 		pos = str(pos)
-		hits.append([chr + ":" + pos, "NAME" + str(x)])
+		hits.append([chr + ":" + pos, chr + ":" + pos])
 	
 #find the minimum pvalue
 	if minimum:

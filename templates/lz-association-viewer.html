@@ -10,65 +10,70 @@
   <!-- Necessary includes for LocusZoom -->
   <script src="http://portaldev.sph.umich.edu/lz-amp/locuszoom.vendor.min.js" type="text/javascript"></script>
   <!--<script src="http://portaldev.sph.umich.edu/lz-amp/locuszoom.next.js" type="text/javascript"></script>-->
-	<script src="http://portaldev.sph.umich.edu/lzplug/locuszoom.app.js" type="text/javascript"></script>
-  <link rel="stylesheet" type="text/css" href="http://portaldev.sph.umich.edu/lz-amp/locuszoom.next.css"/>
-
+	<script src="http://statgen.github.io/locuszoom/versions/0.3.9/locuszoom.app.js" type="text/javascript"></script>
+  <link rel="stylesheet" type="text/css" href="http://statgen.github.io/locuszoom/versions/0.3.9/locuszoom.css"/>
+	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"/>
 </head>
 
-<body style="background-color: #CCCCCC; margin: 10px;" onload="initPage()">
-	<table border="0" cellspacing="10">
-		<tr>
-			<td>
-				<div>
-					<form>
-						<b>lz-1</b> &middot;
-						<label for="lz-1_region">Region: </label>
-						<input type="text" size=25 id="lz-1_region">
-						<input type="button" id="lz-1_submit" value="Go" onClick="changeRegion('lz-1');" />
-					</form>
-					<br>
-				</div>
+<body link="#9da83f" style="background-color: #585858; margin: 10px;" onload="initPage()">
+	<div style="color:#9da83f">
+		<form>
+			<b>lz-1</b> &middot;
+			<label for="lz-1_region">Region: </label>
+			<input type="text" size=25 id="lz-1_region">
+			<input type="button" id="lz-1_submit" value="Go" onClick="changeRegion('lz-1');" />
+		</form>
+		<br>
+	</div>
+	<div class="container-fluid">
+		<div class="row">
+			<div class="col-md-10 col-lg-10 col-sm-10 col-xs-10">
 				<div id="lz-1" class="lz-locuszoom-container" data-region={{ region }}></div>
-			</td>
-			<td style="vertical-align:top">
-				<h3>Top Hits</h3>
-				<div id="tophits"></div>	
-			</td>
-		</tr>
-	</table>
+			</div>
+			<div class="col-md-2 col-lg-2 col-sm-2 col-xs-2" style="vertical-align:top">
+				<h3 style="color:#9da83f;">Top Hits</h3>
+				<div style="color:#9da83f" id="tophits"></div>
+			</div>
+		</div>
+	</div>
+
+	
   <script type="text/javascript">
 
     // Define LocusZoom Data Sources object
 	var localBase = "http://127.0.0.1:" + {{ port }} + "/api/";
     var remoteBase = "http://portaldev.sph.umich.edu/api/v1/";
     var data_sources = new LocusZoom.DataSources();
-    data_sources.addSource("base", ["AssociationLZ", localBase]);
-    data_sources.addSource("ld", ["LDLZ" ,remoteBase + "pair/LD/"]);
-    data_sources.addSource("gene", ["GeneLZ", { url: remoteBase + "annotation/genes/", params: {source: 2} }]);
+    data_sources.add("base", ["AssociationLZ", localBase]);
+    data_sources.add("ld", ["LDLZ" ,remoteBase + "pair/LD/"]);
+    data_sources.add("gene", ["GeneLZ", { url: remoteBase + "annotation/genes/", params: {source: 2} }]);
     data_sources.add("sig", ["StaticJSON", [{ "x": 0, "y": 4.522 }, { "x": 2881033286, "y": 4.522 }] ])
+    data_sources.add("recomb", ["RecombLZ", { url: remoteBase + "annotation/recomb/results/", params: {source: 15} }])
+	
     //data_sources.add("recomb", ["RecombLZ", { url: apiBase + "annotation/recomb/results/", params: {source: 15}])
-
+	{% raw %}
     var my_layout = {
+		resizable: "responsive",
     	panels: {
     		positions: {
-    			fields: ["id", "position", "pvalue|scinotation", "pvalue|neglog10", "ld:state"],
     			data_layers: {
     				positions: {
     					fields: ["id", "position", "pvalue|scinotation", "pvalue|neglog10", "ld:state"],
+    					id_field: "id",
     					tooltip: {
-    						html: "<strong>{{id}}</strong>"
+    						html: "<strong>{{id}} <br></strong> P-value: <strong>{{pvalue|scinotation}}</strong>"
     					}
     				}
     			}
     		}
     	}
     };
-	
+    {% endraw %}
     var layout = LocusZoom.mergeLayouts(my_layout, LocusZoom.StandardLayout);
 
 
     // Populate the div with a LocusZoom plot using the default layout
-    var demo_instance = LocusZoom.populate("#lz-1", data_sources, layout);
+    var plot = LocusZoom.populate("#lz-1", data_sources, layout);
 
 
     var topHits = {{ hits|tojson }};
@@ -96,7 +101,7 @@
     		start = +pos - 300000
     		end = +pos + 300000
     	}
-    	demo_instance.applyState({ chr: chr, start: start, end: end});
+    	plot.applyState({ chr: chr, start: start, end: end});
     }
 
     function jumpTo(region) {
@@ -109,7 +114,7 @@
     		start = +pos - 300000
     		end = +pos + 300000
     	}
-    	demo_instance.applyState({ chr: chr, start: start, end: end, ldrefvar: "" });
+    	plot.applyState({ chr: chr, start: start, end: end, ldrefvar: "" });
     	populateForms();
     	return(false);
     }
@@ -125,16 +130,16 @@
     // Apply form data to a remapping of the demo LocusZoom instance
     function changeRegion(lz_id){
     	var target =  LocusZoom.parsePositionQuery($("#" + lz_id + "_region")[0].value);
-    	demo_instance.state.ldrefvar = "";
-    	demo_instance.mapTo(target.chr, target.start, target.end);
+    	plot.state.ldrefvar = "";
+    	plot.mapTo(target.chr, target.start, target.end);
     }
 
 
     	// Fill demo forms with values already loaded into LocusZoom objects
     function populateForms(){
-      $("#lz-1_region")[0].value = demo_instance.state.chr + ":"
-                                 + demo_instance.state.start + "-"
-                                 + demo_instance.state.end;
+      $("#lz-1_region")[0].value = plot.state.chr + ":"
+                                 + plot.state.start + "-"
+                                 + plot.state.end;
     }
 
     function initPage() {
