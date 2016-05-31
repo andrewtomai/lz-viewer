@@ -313,7 +313,6 @@ def gather_data_gzip(filename, names, start, end, chrom_in):
 			
 		#split up the line into a list of datums
 		data = line.split()
-		
 		#if the data is not yet in range
 		if long(data[position_column]) < start:
 			continue
@@ -449,8 +448,6 @@ def create_baseline_minimums(num_minimums):
 	
 	return minimums 
 
-########-----------------------------------------------------------------------------------------########
-#########################################################################################################
 
 ##REQUIRES minimums is a dictionary of minimums
 ##MODIFIES nothing
@@ -466,6 +463,11 @@ def find_min_of_mins(minimums):
 
 		counter += 1
 	return current_position
+
+########-----------------------------------------------------------------------------------------########
+#########################################################################################################
+
+
 
 ##REQUIRES data is a dictionary 
 ##MODIFIES data
@@ -606,4 +608,4 @@ if __name__ == '__main__':
 	
 	
 	#run the flask webserver
-	lz_app.run(port = port_number, debug=True, threaded=True)
+	lz_app.run(port = port_number, debug=False, threaded=True)

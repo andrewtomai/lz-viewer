@@ -13,15 +13,29 @@
 	<script src="http://statgen.github.io/locuszoom/versions/0.3.9/locuszoom.app.js" type="text/javascript"></script>
   <link rel="stylesheet" type="text/css" href="http://statgen.github.io/locuszoom/versions/0.3.9/locuszoom.css"/>
 	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"/>
+	<style>
+	a:link {
+		color:#9da83f
+	}
+	a:visited {
+		color:#8F9C28
+	}
+	a:hover {
+		color:#D2E053
+	}
+	a:active {
+		color:#D2E053
+	}
+	</style>
 </head>
 
-<body link="#9da83f" style="background-color: #585858; margin: 10px;" onload="initPage()">
+<body style="background-color: #585858; margin: 10px;" onload="initPage()">
 	<div style="color:#9da83f">
 		<form>
 			<b>lz-1</b> &middot;
 			<label for="lz-1_region">Region: </label>
-			<input type="text" size=25 id="lz-1_region">
-			<input type="button" id="lz-1_submit" value="Go" onClick="changeRegion('lz-1');" />
+			<input style="color:#000000" type="text" size=25 id="lz-1_region">
+			<input style="color:#000000" type="button" id="lz-1_submit" value="Go" onClick="changeRegion('lz-1');" />
 		</form>
 		<br>
 	</div>
@@ -31,7 +45,7 @@
 				<div id="lz-1" class="lz-locuszoom-container" data-region={{ region }}></div>
 			</div>
 			<div class="col-md-2 col-lg-2 col-sm-2 col-xs-2" style="vertical-align:top">
-				<h3 style="color:#9da83f;">Top Hits</h3>
+				<h3 style="color:#9da83f;">Most Significant Regions</h3>
 				<div style="color:#9da83f" id="tophits"></div>
 			</div>
 		</div>
