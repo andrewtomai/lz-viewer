@@ -1,13 +1,10 @@
 ################################################################################################
 #---------------------------------------helper functions---------------------------------------#
-
-import pysam
 import math
 import argparse
 import re 
 import gzip
 import zlib
-import time
 from cStringIO import StringIO
 from struct import *
 from flask import Flask, jsonify, request, render_template, url_for
@@ -45,7 +42,7 @@ def check_options():
 	if args.range:
 		range = args.range
 	else: #otherwise the default range is set to be based off of the minimum p-value
-		minimum = True
+	    minimum = True
 
 
 	#return a dictionary including the filename and port number
@@ -102,9 +99,11 @@ def add_datum(names, column, datum, dict):
 		#then the datum is a scientifically notated float
 	elif (re.search('[a-zA-Z]', datum.replace('e', '')) == None) & (datum.count('e') == 1):
 		dict[names[column]].append(float(datum))
+
 	elif re.search('[a-zA-Z]', datum) != None:
 		#then its the name of a variant
-		dict[names[column]].append(datum)
+		relevant = re.search('\d+:\d+_[ACTG]/[ACTG]', datum)
+		dict[names[column]].append(relevant.group())
 	elif "." in datum:
 		#then its a float
 		dict[names[column]].append(float(datum))
