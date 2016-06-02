@@ -8,7 +8,7 @@ import zlib
 from cStringIO import StringIO
 from struct import *
 from flask import Flask, jsonify, request, render_template, url_for
-
+import time
 
 
 
@@ -22,7 +22,14 @@ def check_options():
 	parser.add_argument("-p", "--port", help="Specify a port at which to view results", type=int)
 	#add the filename argument
 	parser.add_argument("filename", type=str, help="Provide the name of the file to be graphed")
-	
+
+	filetype = parser.add_mutually_exclusive_group()
+	#add the "RAREMETAL" argument
+	filetype.add_argument("-R", "--RAREMETAL", help="Specifies if RAREMETAL results are being used", action="store_true")
+	#add the "PLINK" argument
+	filetype.add_argument("-P","--PLINK", help="Specifies if PLINK results are being used", action="store_true")
+	#add the "EPACTS" argument
+	filetype.add_argument("-E", "--EPACTS", help="Specifies if EPACTS results are being used", action="store_true")
 	#add the range argument
 	parser.add_argument("-r", "--range", type=str, help="Provide the range of positions to grab of format: [CHROMOSOME #]:[START]-[END]")
 	#parse the arguments
@@ -46,30 +53,41 @@ def check_options():
 
 
 	#return a dictionary including the filename and port number
-	return {'filename' : file, 'port_number' : port_number, 'range' : range, 'minimum' : minimum}
+	return {'filename' : file, 'port_number' : port_number, 'range' : range, 'minimum' : minimum, 'EPACTS': args.EPACTS, 'RAREMETAL' : args.RAREMETAL, 'PLINK' : args.PLINK}
 
 
-##REQUIRES filename is a tabix file
+##REQUIRES filename is a gzipped file
 ##MODIFIES stdout
 ##EFFECTS reads the header of filename, returns a list of names.
-def check_header(filename):
+def check_header(filename, filetype):
 	#open the gzip file
 	with gzip.open(filename) as f:
-		text = f.readline()
-	#split this text into words
-	words = text.split()
-	#initialize a list of names of columns
-	names = []
-	#loops through the columns to create list of names
-	for word in words:
-		if word == "BEGIN":
-			names.append("position")
-		elif word == "MARKER_ID":
-			names.append("id")
-		elif word == "#CHROM":
-			names.append("chr")
-		else: 
-			names.append(word.lower())
+		#if the filetype is raremetal
+		if filetype == "RAREMETAL":
+			#loop through the lines until we get to the header line
+			for line in f:
+				#split up the line and look for the word #CHROM
+				words = line.split()
+				if words[0] == "#CHROM":
+					break
+		if filetype == "EPACTS":
+			text = f.readline()
+			#split this text into words
+			words = text.split()
+		#initialize a list of names of columns
+		names = []
+		#loops through the columns to create list of names
+		for word in words:
+			if word == "BEGIN":
+				names.append("position")
+			elif word == "MARKER_ID":
+				names.append("id")
+			elif word == "#CHROM":
+				names.append("chr")
+			elif word == "POS":
+				names.append("position")
+			else: 
+				names.append(word.lower())
 	return names
 
 
@@ -93,12 +111,19 @@ def get_column(names, key):
 ##MODIFIES dict
 ##EFFECTS adds 'datum' to the dict
 def add_datum(names, column, datum, dict):
+
+
 	#the datum should be stored as NULL
 	if datum == "NA":
 		dict[names[column]].append(None)
+
 		#then the datum is a scientifically notated float
 	elif (re.search('[a-zA-Z]', datum.replace('e', '')) == None) & (datum.count('e') == 1):
 		dict[names[column]].append(float(datum))
+
+		#then its the name of an allele or chromosome (such as chr x)
+	elif (re.search('[a-zA-Z]', datum) != None ) & len(datum) == 1:
+		dict[names[column]].append(str(datum))
 
 	elif re.search('[a-zA-Z]', datum) != None:
 		#then its the name of a variant
@@ -286,6 +311,12 @@ def gather_data_gzip(filename, names, start, end, chrom_in):
 	#open the gzip file
 
 
+
+
+
+
+
+
 	#Get the offset information for the range we want
 	offset_within_block, block_offset, end_offset = find_block(filename, start, end, chrom_in)
 	
@@ -305,11 +336,15 @@ def gather_data_gzip(filename, names, start, end, chrom_in):
 	decompressed.seek(offset_within_block)
 	#if there was no offset, we need to skip the header
 	if offset_within_block == 0 & block_offset == 0:
-		decompressed.next()	 
+		#skip the header
+		for line in decompressed:
+			line = line.split()
+			if line[0] == "#CHROM":
+				break
 
 	#loop through the lines
 	for line in decompressed:
-			
+		time.sleep(1)
 		#split up the line into a list of datums
 		data = line.split()
 		#if the data is not yet in range
@@ -371,7 +406,12 @@ def find_min_pvals(filename, names, num_minimums, region_buffer):
 	#open the file
 	with gzip.open(filename, 'rb') as f:
 		#skip the header
-		next(f)
+		for line in f:
+			line = line.split()
+			if line[0] == "#CHROM":
+				break
+		
+
 		#create the minimums dictionary
 		minimums = create_baseline_minimums(num_minimums)
 		#find the highest of the minimums
@@ -379,9 +419,15 @@ def find_min_pvals(filename, names, num_minimums, region_buffer):
 		highest_min, highest_min_index = find_highest_min(minimums, num_minimums)
 		#loops through the lines in the file
 		for line in f:
+			
 			data = line.split()
+			#if we have hit the end of a RAREMETAL file
+			if data[0] == '#Genomic':
+				break
+			#if the data is not availalbe
 			if data[pval_column] == 'NA':
 				continue
+			
 			#if the current pvalue is greater or equal to the highest minimum, we do not add it to the dictionary
 			elif float(data[pval_column]) >= highest_min:
 				continue
@@ -452,6 +498,7 @@ def create_baseline_minimums(num_minimums):
 ##MODIFIES nothing
 ##EFFECTS finds the index of the minimum of the minimums
 def find_min_of_mins(minimums):
+	
 	current_min = 1
 	counter = 0
 	for min in minimums['value']:
@@ -571,10 +618,27 @@ if __name__ == '__main__':
 	global range_opt 
 	range_opt = arguments["range"]
 
+	EPACTS = arguments["EPACTS"]
+	RAREMETAL = arguments["RAREMETAL"]
+	PLINK = arguments["PLINK"]
+	
+	if EPACTS:
+		filetype = "EPACTS"
+	elif RAREMETAL:
+		filetype = "RAREMETAL"
+	elif PLINK:
+		filetype = "PLINK"
+	else:
+		#AUTODETECT
+		#for now, just epacts for sake of simplicity
+		filetype = "EPACTS"
 
+
+
+	#the input file is an EPACTS test
 	#get the header of the file
 	global header
-	header = check_header(filename)
+	header = check_header(filename, filetype)
 
 
 	#find the minimums
@@ -600,10 +664,13 @@ if __name__ == '__main__':
 		minimum_position = minimums['position'][min_index]
 
 		range_opt = str(minimum_chromosome) + ":" + str(minimum_position) + "+150kb" 
-	#create a dictionary that contains the most recent called chromosome and positions
-	global chrom_pos_dict
-	chrom_pos_dict = {'chromosome': 11, 'start': 1, 'end': 2}
+		#create a dictionary that contains the most recent called chromosome and positions
+		global chrom_pos_dict
+		chrom_pos_dict = {'chromosome': 11, 'start': 1, 'end': 2}
+			
+
 	
+	data = gather_data_gzip(filename, header, 58528512, 58828512, 15)
 	
 	
 	#run the flask webserver
