@@ -19,7 +19,7 @@
 *.rar
 *.tar
 *.zip
-
+raremetal.*
 assoc.*
 venv/
 # Logs and databases #
