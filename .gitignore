@@ -20,6 +20,7 @@
 *.tar
 *.zip
 raremetal.*
+plink.*
 assoc.*
 venv/
 # Logs and databases #
