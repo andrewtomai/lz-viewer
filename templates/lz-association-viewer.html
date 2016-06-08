@@ -34,10 +34,10 @@
 <body style="background-color: #585858; margin: 10px;" onload="initPage()">
 	<div style="color:#9da83f">
 		<form>
-			<b>lz-1</b> &middot;
+			<b>lz-1</b> &middot; <b>{{ filetype }}</b> &middot;
 			<label for="lz-1_region">Region: </label>
 			<input style="color:#000000" type="text" size=25 id="lz-1_region">
-			<input style="color:#000000" type="button" id="lz-1_submit" value="Go" onClick="changeRegion('lz-1');" />
+			<input style="color:#000000" type="button" id="lz-1_submit" value="Go" onClick="handleFormSubmit('lz-1');" />
 		</form>
 		<br>
 	</div>

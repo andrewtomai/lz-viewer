@@ -16,7 +16,7 @@ def after_request(response):
 @lz_app.route('/')
 def home():
 	
-	return render_template("lz-association-viewer.html", port=port_number, region=range_opt, hits=hits)
+	return render_template("lz-association-viewer.html", port=port_number, region=range_opt, hits=hits, filetype=filetype)
 @lz_app.route('/api/results/', methods=['GET'])
 ##REQUIRES object is a dictionary
 ##MODIFIES lz_app
@@ -91,9 +91,9 @@ if __name__ == '__main__':
 		minimum_position = minimums['position'][min_index]
 
 		range_opt = str(minimum_chromosome) + ":" + str(minimum_position) + "+150kb" 
-		#create a dictionary that contains the most recent called chromosome and positions
-		global chrom_pos_dict
-		chrom_pos_dict = {'chromosome': 11, 'start': 1, 'end': 2}
+	#create a dictionary that contains the most recent called chromosome and positions
+	global chrom_pos_dict
+	chrom_pos_dict = {'chromosome': 11, 'start': 1, 'end': 2}
 			
 
 	

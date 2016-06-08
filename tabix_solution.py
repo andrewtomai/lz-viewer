@@ -4,7 +4,7 @@ import gzip
 import zlib
 from cStringIO import StringIO
 from struct import *
-
+import binascii
 
 ##REQUIRES names is a header list
 ##MODIFIES position_column
@@ -234,32 +234,30 @@ def gather_data_gzip(filename, filetype, names, start, end, chrom_in):
 	current_column = 0
 	#get the number of columns
 	num_columns = len(names)
+
+
+
 	#open the gzip file
-
-
-
-
-
-
-
 
 	#Get the offset information for the range we want
 	offset_within_block, block_offset, end_offset = find_block(filename, start, end, chrom_in)
 	
 	#skip to the block_offset of the compressed file
 	with open(filename, 'rb') as compressed:
-		
+
 		compressed.seek(block_offset)
-		
+
 		#if the end position is in the last block
 		if end_offset == -1:
 			block = compressed.read()
 		#otherwise, only read the least amount of data to decompress
 		else: 
 			block = compressed.read(end_offset - block_offset + 1)
-	
+			
 	#create a decompressed StringIO from the compressed data
-	decompressed = StringIO(stream_gzip_decompress(block))
+	
+	decompressed = gzip.GzipFile(filename, fileobj=StringIO(block))
+	
 	#skip to the relevant data within the block
 	decompressed.seek(offset_within_block)
 	
