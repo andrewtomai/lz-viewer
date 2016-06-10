@@ -34,7 +34,7 @@ def add_datum(names, column, datum, dict):
 
 	elif re.search('[a-zA-Z:]', datum) != None:
 		#then its the name of a variant
-		relevant = re.search('\d+:\d+_[ACTG]/[ACTG]', datum)
+		relevant = re.search('^\S+:\d+_[ACTG]/[ACTG]', datum)
 		if relevant:
 			dict[names[column]].append(relevant.group())
 		else:
@@ -204,7 +204,7 @@ def stream_gzip_decompress(stream):
 	rv = dec.decompress(stream)
 	#make sure the string isnt NULL
 	if rv:
-		return rv
+		yield rv
 
 
 

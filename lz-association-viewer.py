@@ -94,7 +94,7 @@ if __name__ == '__main__':
 	#create a dictionary that contains the most recent called chromosome and positions
 	global chrom_pos_dict
 	chrom_pos_dict = {'chromosome': 11, 'start': 1, 'end': 2}
-			
+	
 
 	
 	#run the flask webserver
