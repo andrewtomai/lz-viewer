@@ -1,6 +1,8 @@
 import get_options
-import tabix_solution
+
 import minimum_solution
+import manhattan_binning
+import Data_reader
 from flask import Flask, jsonify, request, render_template, url_for
 
 #########################################################################################################
@@ -17,17 +19,17 @@ def after_request(response):
 def home():
 	
 	return render_template("lz-association-viewer.html", port=port_number, region=range_opt, hits=hits, filetype=filetype)
-@lz_app.route('/api/results/', methods=['GET'])
+@lz_app.route('/api/lz-results/', methods=['GET'])
 ##REQUIRES object is a dictionary
 ##MODIFIES lz_app
 ##EFFECTS displays a json objects at route '/api'
-def api():
-	
+def api_lz():
 	#get the filter query string
 	filter = request.args.get('filter')
 	
 	#if we have a query string, we need to update the chromosome and position information
 	if filter:
+			
 		chromosome, start, end = get_options.parse_query(filter)
 		chrom_pos_dict['chromosome'] = chromosome
 		chrom_pos_dict['start'] = start
@@ -40,12 +42,25 @@ def api():
 		end = chrom_pos_dict['end']
 
 	#gather the data
-	data = tabix_solution.gather_data_gzip(filename, filetype, header, start, end, chromosome)
+	file_reader = Data_reader.Data_reader.factory(filename, filetype)
+	data = file_reader.create_dict_from_file(start, end, chromosome)
+		
 
 	#format the dictionary according to the portal API
 	object = get_options.format_data(data)
 
 	return jsonify(object)
+
+@lz_app.route('/api/manhattan/', methods=['GET'])
+def api_manhattan():
+	file_reader = Data_reader.Data_reader.factory(filename, filetype)
+	variant_bins, unbinned_variants = manhattan_binning.bin_variants(file_reader)
+	rv = {
+		'variant_bins': variant_bins,
+		'unbinned_variants': unbinned_variants,
+		}
+	return jsonify(rv)
+	
 
 #----------------------------------------------------------------------------------------------------#
 ######################################################################################################
@@ -64,19 +79,21 @@ if __name__ == '__main__':
 	minimum = arguments["minimum"]
 	global range_opt 
 	range_opt = arguments["range"]
-
+	global manhattan
+	manhattan = arguments["manhattan"]
 	
 	global filetype
 	filetype = get_options.get_filetype(arguments, filename)
 	
-	
+	file_reader = Data_reader.Data_reader.factory(filename, filetype)
+
 	#get the header of the file
 	global header
-	header = get_options.check_header(filename, filetype)
+	header = file_reader.header
 	
 
 	#find the minimums
-	minimums = minimum_solution.find_min_pvals(filename, header, 10, 102400)
+	minimums = minimum_solution.find_min_pvals(filename, filetype, 10, 102400)
 	
 	
 	#create a list of 'hits'
@@ -94,6 +111,7 @@ if __name__ == '__main__':
 	#create a dictionary that contains the most recent called chromosome and positions
 	global chrom_pos_dict
 	chrom_pos_dict = {'chromosome': 11, 'start': 1, 'end': 2}
+	
 	
 
 	

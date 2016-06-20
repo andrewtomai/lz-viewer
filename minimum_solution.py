@@ -1,58 +1,52 @@
 import gzip
-import tabix_solution
+import Data_reader
 ##REQUIRES filename is a tabix file, names is the header of the file
 ##MODIFIES nothing
 ##EFFECTS finds the position of the minimum pvalue
-def find_min_pvals(filename, names, num_minimums, region_buffer):
-	#get the column of the pvals
-	pval_column = tabix_solution.get_column(names, "pvalue")
-	#get the column of positions
-	position_column = tabix_solution.get_column(names, "position")
-	#get the column of the chromosome
-	chrom_column = tabix_solution.get_column(names, "chr")
+def find_min_pvals(filename, filetype, num_minimums, region_buffer):
+	#create a file reader from the file
+	file_reader = Data_reader.Data_reader.factory(filename, filetype)
+	#skip the header
+	file_reader.skip_header()
 
-	#open the file
-	with gzip.open(filename, 'rb') as f:
-		#skip the header
-		for line in f:
-			line = line.split()
-			if (line[0] == "#CHROM") | (line[0] == "CHR"):
-				break
-		
 
-		#create the minimums dictionary
-		minimums = create_baseline_minimums(num_minimums)
-		#find the highest of the minimums
-
-		highest_min, highest_min_index = find_highest_min(minimums, num_minimums)
-		#loops through the lines in the file
-		for line in f:
-			
-			data = line.split()
-			#if we have hit the end of a RAREMETAL file
-			if data[0] == '#Genomic':
-				break
-			
-			#if the data is not availalbe
-			if data[pval_column] == 'NA':
-				continue
-			
-			#if the current pvalue is greater or equal to the highest minimum, we do not add it to the dictionary
-			elif float(data[pval_column]) >= highest_min:
-				continue
-			#if the current pvalue should (possibly) be added to the dictionary of mins
-			else:
-				shares_region, shared_index = index_of_shared_region(minimums, num_minimums, long(data[position_column]), region_buffer)
-				if shares_region:
-					if float(data[pval_column]) < minimums['value'][shared_index]:
-						minimums = replace_minimum(minimums, long(data[position_column]), float(data[pval_column]), int(data[chrom_column]), shared_index)
-						highest_min, highest_min_index = find_highest_min(minimums, num_minimums)
-					else:
-						continue
-				else:
-					minimums = replace_minimum(minimums, long(data[position_column]), float(data[pval_column]), int(data[chrom_column]), highest_min_index)
-					highest_min, highest_min_index = find_highest_min(minimums, num_minimums)
 	
+	#create the minimums dictionary
+	minimums = create_baseline_minimums(num_minimums)
+	#find the highest of the minimums
+
+	highest_min, highest_min_index = find_highest_min(minimums, num_minimums)
+	#loops through the lines in the file
+	
+	line = file_reader.get_line()
+	while line != '#Genomic' or line != '':
+		
+		if line == '' or line.split()[0] == '#Genomic':
+			break
+		#if the pvalue is not available
+		if file_reader.get_pval() == 'NA':
+			line = file_reader.get_line()
+			continue
+		#if the pvalue is equal to the highest minimum, we do not add it to dictionary
+		elif float(file_reader.get_pval()) >= highest_min:
+			line = file_reader.get_line()
+			continue
+
+		else:
+			shares_region, shared_index = index_of_shared_region(minimums, num_minimums, long(file_reader.get_pos()), region_buffer)
+			if shares_region:
+				if float(file_reader.get_pval()) < minimums['value'][shared_index]:
+					minimums = replace_minimum(minimums, long(file_reader.get_pos()), float(file_reader.get_pval()), int(file_reader.get_chrom()), shared_index)
+					highest_min, highest_min_index = find_highest_min(minimums, num_minimums)
+				else:
+					line = file_reader.get_line()
+					continue
+			else:
+				minimums = replace_minimum(minimums, long(file_reader.get_pos()), float(file_reader.get_pval()), int(file_reader.get_chrom()), highest_min_index)
+				highest_min, highest_min_index = find_highest_min(minimums, num_minimums)
+		line = file_reader.get_line()
+	
+		
 	return minimums
 
 

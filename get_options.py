@@ -23,6 +23,8 @@ def check_options():
 	filetype.add_argument("-E", "--EPACTS", help="Specifies if EPACTS results are being used", action="store_true")
 	#add the range argument
 	parser.add_argument("-r", "--range", type=str, help="Provide the range of positions to grab of format: [CHROMOSOME #]:[START]-[END]")
+	#add the manhattan argument
+	parser.add_argument("-m", "--manhattan", help="Specify if the plot should be a manhattan plot", action="store_true")
 	#parse the arguments
 	args = parser.parse_args()
 	#set the filename
@@ -44,49 +46,8 @@ def check_options():
 
 
 	#return a dictionary including the filename and port number
-	return {'filename' : file, 'port_number' : port_number, 'range' : range, 'minimum' : minimum, 'EPACTS': args.EPACTS, 'RAREMETAL' : args.RAREMETAL, 'PLINK' : args.PLINK}
+	return {'filename' : file, 'port_number' : port_number, 'range' : range, 'minimum' : minimum, 'EPACTS': args.EPACTS, 'RAREMETAL' : args.RAREMETAL, 'PLINK' : args.PLINK, 'manhattan' : args.manhattan}
 
-
-##REQUIRES filename is a gzipped file
-##MODIFIES stdout
-##EFFECTS reads the header of filename, returns a list of names.
-def check_header(filename, filetype):
-	#open the gzip file
-	with gzip.open(filename) as f:
-		#if the filetype is raremetal
-		if filetype == "RAREMETAL":
-			#loop through the lines until we get to the header line
-			for line in f:
-				#split up the line and look for the word #CHROM
-				words = line.split()
-				if words[0] == "#CHROM":
-					break
-		elif (filetype == "EPACTS") | (filetype == "PLINK"):
-			text = f.readline()
-			#split this text into words
-			words = text.split()
-		else:
-			text = f.readline()
-			words = text.split()
-		#initialize a list of names of columns
-		names = []
-		#loops through the columns to create list of names
-		for word in words:
-			if word == "BEGIN":
-				names.append("position")
-			elif word == "MARKER_ID":
-				names.append("id")
-			elif word == "#CHROM":
-				names.append("chr")
-			elif (word == "POS") | (word == "BP"):
-				names.append("position")
-			elif word == "P":
-				names.append("pvalue")
-			else: 
-				names.append(word.lower())
-		if (filetype == "RAREMETAL") | (filetype == "PLINK"):
-			names.append("id")
-	return names
 
 
 ##REQUIRES: arguments is a list of arguments given by check_arguments, filename is valid
