@@ -1,9 +1,10 @@
 import get_options
-
+import json
 import minimum_solution
 import manhattan_binning
+import qq_to_json
 import Data_reader
-from flask import Flask, jsonify, request, render_template, url_for
+from flask import Flask, jsonify, request, render_template, url_for, Response
 
 #########################################################################################################
 #--------------------------------------Flask initialization---------------------------------------------#	
@@ -19,6 +20,14 @@ def after_request(response):
 def home():
 	
 	return render_template("lz-association-viewer.html", port=port_number, region=range_opt, hits=hits, filetype=filetype)
+
+@lz_app.route('/manhattan/')
+def manhattan_home():
+	return render_template("manhattan.html", port=port_number)
+@lz_app.route('/QQ/')
+def QQ_plot():
+	return render_template("qq.html", port=port_number)
+
 @lz_app.route('/api/lz-results/', methods=['GET'])
 ##REQUIRES object is a dictionary
 ##MODIFIES lz_app
@@ -51,6 +60,8 @@ def api_lz():
 
 	return jsonify(object)
 
+
+#create a manhattan plot
 @lz_app.route('/api/manhattan/', methods=['GET'])
 def api_manhattan():
 	file_reader = Data_reader.Data_reader.factory(filename, filetype)
@@ -61,6 +72,22 @@ def api_manhattan():
 		}
 	return jsonify(rv)
 	
+#create a qq plot
+@lz_app.route('/api/QQ/', methods=['GET'])
+def api_qq():
+	bin = request.args.get('bin')
+	file_reader = Data_reader.Data_reader.factory(filename, filetype)
+	
+	if (bin == 'true' or bin == 'True') and filetype == 'EPACTS' :
+		
+		rv = qq_to_json.make_qq_stratified(file_reader)
+	
+	else:
+		rv = qq_to_json.make_qq(file_reader)
+
+	resp = Response(response=json.dumps(rv), status=200, mimetype="application/json")
+	return resp
+
 
 #----------------------------------------------------------------------------------------------------#
 ######################################################################################################

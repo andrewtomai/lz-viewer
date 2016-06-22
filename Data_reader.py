@@ -36,7 +36,12 @@ class Data_reader(object):
 	##EFFECTS default returns NULL because we do not know where the information is stored
 	def get_alt(self):
 		return None
-
+	
+	##REQUIRES nothing
+	##MODIFIES nothing
+	##EFFECTS returns NULL because location/existance of maf depends on filetype
+	def get_maf(self):
+		return None
 
 	##REQUIRES file object has been initialized
 	##MODIFIES nothing
@@ -368,6 +373,15 @@ class Epacts_reader(Data_reader):
 
 	##REQUIRES a variant line has been read using get_line
 	##MODIFIES self
+	##EFFECTS returns the maf as string
+	def get_maf(self):
+		assert self.line != None, "A line hasn't been read yet."
+		line = self.make_line_dict(self.line)
+		maf = line['maf']
+		return maf
+
+	##REQUIRES a variant line has been read using get_line
+	##MODIFIES self
 	##EFFECTS returns the ref allele
 	def get_ref(self):
 		assert self.line != None, "A line hasn't been read yet."
@@ -543,6 +557,7 @@ def get_filetype(filename):
 			filetype = None
 
 	return filetype
+
 
 
 
