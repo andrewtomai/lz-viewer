@@ -4,7 +4,7 @@ import minimum_solution
 import manhattan_binning
 import qq_to_json
 import Data_reader
-from flask import Flask, jsonify, request, render_template, url_for, Response
+from flask import Flask, jsonify, request, render_template, url_for, Response, send_from_directory, redirect
 
 #########################################################################################################
 #--------------------------------------Flask initialization---------------------------------------------#	
@@ -16,19 +16,45 @@ def after_request(response):
 	response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
 	return response
 
+@lz_app.route('/static/<path:path>')
+def send_js(path):
+    return send_from_directory('static', path)
+
+##REQUIRES nothing
+##MODIFIES lz_app
+##EFFECTS renders the manhattan plot template
 @lz_app.route('/')
 def home():
+	if range_opt:
+		return redirect("/lz/" + range_opt)
+	return redirect(url_for("manhattan"))
 	
-	return render_template("lz-association-viewer.html", port=port_number, region=range_opt, hits=hits, filetype=filetype)
 
+##REQUIRES nothing
+##MODIFIES lz_app
+##EFFECTS renders the manhattan plot template
 @lz_app.route('/manhattan/')
-def manhattan_home():
+def manhattan():
 	return render_template("manhattan.html", port=port_number)
+
+
+##REQUIRES nothing
+##MODIFIES lz_app
+##EFFECTS renders the lz plot template
+@lz_app.route('/lz/<region>')
+def lz_region(region):
+	return render_template("lz-association-viewer.html", port=port_number, region=region, hits=hits, filetype=filetype)
+
+
+##REQUIRES nothing
+##MODIFIES lz_app
+##EFFECTS renders the qq plot template
 @lz_app.route('/QQ/')
 def QQ_plot():
 	return render_template("qq.html", port=port_number)
 
 @lz_app.route('/api/lz-results/', methods=['GET'])
+
 ##REQUIRES object is a dictionary
 ##MODIFIES lz_app
 ##EFFECTS displays a json objects at route '/api'
@@ -61,7 +87,9 @@ def api_lz():
 	return jsonify(object)
 
 
-#create a manhattan plot
+##REQUIRES nothing
+##MODIFIES lz_app
+##EFFECTS returns the JSON api for manhattan plots
 @lz_app.route('/api/manhattan/', methods=['GET'])
 def api_manhattan():
 	file_reader = Data_reader.Data_reader.factory(filename, filetype)
@@ -72,7 +100,9 @@ def api_manhattan():
 		}
 	return jsonify(rv)
 	
-#create a qq plot
+##REQUIRES nothing
+##MODIFIES lz_app
+##EFFECTS returns the JSON api for QQ plots
 @lz_app.route('/api/QQ/', methods=['GET'])
 def api_qq():
 	bin = request.args.get('bin')
@@ -106,8 +136,7 @@ if __name__ == '__main__':
 	minimum = arguments["minimum"]
 	global range_opt 
 	range_opt = arguments["range"]
-	global manhattan
-	manhattan = arguments["manhattan"]
+	
 	
 	global filetype
 	filetype = get_options.get_filetype(arguments, filename)
@@ -134,7 +163,7 @@ if __name__ == '__main__':
 		minimum_chromosome = minimums['chromosome'][min_index]
 		minimum_position = minimums['position'][min_index]
 
-		range_opt = str(minimum_chromosome) + ":" + str(minimum_position) + "+150kb" 
+		
 	#create a dictionary that contains the most recent called chromosome and positions
 	global chrom_pos_dict
 	chrom_pos_dict = {'chromosome': 11, 'start': 1, 'end': 2}

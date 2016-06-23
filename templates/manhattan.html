@@ -2,13 +2,62 @@
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
+	<script src="/static/plot.js"></script>
     <meta charset="utf-8" />
     <title>Manhattan Plot Demo</title>
 	<script src="https://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.16/d3.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.6.7/d3-tip.min.js"></script>
+	<style>
+		a:link {
+			color: #9999ff;
+		}
+
+		a:visited {
+			color: #9999ff;
+		}
+
+		a:hover {
+			color: #9999ff;
+		}
+
+		a:active {
+			color: #9999ff;
+		}
+	</style>
 	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
+	<script type="text/javascript">
+		var jumpToLocusZoom = function (chrom, pos) {
+			var region = chrom + ":" + (pos-1e5) + "-" + (pos+1e5);
+			document.location.href = "/lz/" + region;
+		}
+		$(document).ready(function()
+		{
+			$.getJSON("/api/manhattan/").done(function(variants)	
+			{
+				create_gwas_plot("#manhattanplot", variants.variant_bins, variants.unbinned_variants, function(chrom, pos, ref, alt)
+				{
+				jumpToLocusZoom(chrom, pos);
+
+				})
+			})
+		})
+
+
+	</script>
 </head>
-<body>
-	<h1>Manhattan Plot</h1><br />
+<body style="background-color: #f2f2f2; margin: 10px;">
+
+	<h1 align="center">Manhattan Plot</h1>
+	<h4 align="center">
+	click on a point to zoom in<br />
+	or<br />
+	<a href="http://127.0.0.1:{{ port }}/QQ/">click here to view a QQ plot.</a></h4>
+	<br />
+	
+	<div id="manhattanplot"></div>
+	
 	<p>Click <a href="http://127.0.0.1:{{ port }}/api/manhattan/">here </a> to access the api for Manhattan data.</>
 
 </body>

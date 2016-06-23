@@ -23,8 +23,7 @@ def check_options():
 	filetype.add_argument("-E", "--EPACTS", help="Specifies if EPACTS results are being used", action="store_true")
 	#add the range argument
 	parser.add_argument("-r", "--range", type=str, help="Provide the range of positions to grab of format: [CHROMOSOME #]:[START]-[END]")
-	#add the manhattan argument
-	parser.add_argument("-m", "--manhattan", help="Specify if the plot should be a manhattan plot", action="store_true")
+	
 	#parse the arguments
 	args = parser.parse_args()
 	#set the filename
@@ -46,7 +45,7 @@ def check_options():
 
 
 	#return a dictionary including the filename and port number
-	return {'filename' : file, 'port_number' : port_number, 'range' : range, 'minimum' : minimum, 'EPACTS': args.EPACTS, 'RAREMETAL' : args.RAREMETAL, 'PLINK' : args.PLINK, 'manhattan' : args.manhattan}
+	return {'filename' : file, 'port_number' : port_number, 'range' : range, 'minimum' : minimum, 'EPACTS': args.EPACTS, 'RAREMETAL' : args.RAREMETAL, 'PLINK' : args.PLINK}
 
 
 
