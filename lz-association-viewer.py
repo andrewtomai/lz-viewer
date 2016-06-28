@@ -35,7 +35,12 @@ def home():
 ##EFFECTS renders the manhattan plot template
 @lz_app.route('/manhattan/')
 def manhattan():
-	return render_template("manhattan.html", port=port_number)
+	if range_opt:
+		default_range = range_opt
+	
+	else:
+		default_range = minimum_range
+	return render_template("manhattan.html", port=port_number, default_range=default_range)
 
 
 ##REQUIRES nothing
@@ -51,7 +56,11 @@ def lz_region(region):
 ##EFFECTS renders the qq plot template
 @lz_app.route('/QQ/')
 def QQ_plot():
-	return render_template("qq.html", port=port_number)
+	if range_opt:
+		default_range = range_opt
+	else: 
+		default_range = minimum_range
+	return render_template("qq.html", port=port_number, default_range=default_range)
 
 @lz_app.route('/api/lz-results/', methods=['GET'])
 
@@ -162,6 +171,11 @@ if __name__ == '__main__':
 
 		minimum_chromosome = minimums['chromosome'][min_index]
 		minimum_position = minimums['position'][min_index]
+
+		global minimum_range
+		left = minimum_position-100000
+		right = minimum_position+100000
+		minimum_range = str(minimum_chromosome) + ":" + str(left) + "-" + str(right)
 
 		
 	#create a dictionary that contains the most recent called chromosome and positions

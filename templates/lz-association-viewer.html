@@ -28,13 +28,61 @@
 		a:active {
 			color: #9999ff;
 		}
+
+		.navbar-default .navbar-nav > li > a:hover, .navbar-default .navbar-nav > li > a:focus {
+		color: white;  /*Sets the text hover color on navbar*/
+		background-color: #008cba;
+		}
+
+		.navbar-default .navbar-nav > .active > a, .navbar-default .navbar-nav > .active >   
+		 a:hover, .navbar-default .navbar-nav > .active > a:focus {
+		color: 666e92; /*BACKGROUND color for active*/
+		background-color: #bfbfbf
+		}
+
+		  .navbar-default {
+			background-color: #e6e6e6;
+			border-color: #e7e7e7;
+		}
+
+		  .dropdown-menu > li > a:hover,
+		   .dropdown-menu > li > a:focus {
+			color: #262626;
+		   text-decoration: none;
+		  background-color: #66CCFF;  /*change color of links in drop down here*/
+		   }
+
+		 .nav > li > a:hover,
+		 .nav > li > a:focus {
+			text-decoration: none;
+			background-color: silver; /*Change rollover cell color here*/
+		  }
+
+
+		  .navbar-default .navbar-nav > li > a {
+		   color: 666e92; /*Change active text color here*/
+			}
+
+
 	</style>
 </head>
 
 <body style="background-color: #f2f2f2; margin: 10px;" onload="initPage()">
+	<nav class="navbar navbar-default">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<a class="navbar-brand" href="#">Your Results</a>
+			</div>
+			<ul class="nav navbar-nav">
+				<li><a href="http://127.0.0.1:{{ port }}/manhattan">Manhattan Plot</a></li>
+				<li><a href="http://127.0.0.1:{{ port }}/QQ">QQ Plot</a></li>
+				<li class="active"><a href="#">LocusZoom Plot</a></li>
+			</ul>
+		</div>
+	</nav>
 	<div>
 		<form>
-			<b>lz-1</b> &middot; <b>{{ filetype }}</b> &middot;
+			<b>{{ filetype }}</b> &middot;
 			<label for="lz-1_region">Region: </label>
 			<input style="color:#000000" type="text" size=25 id="lz-1_region">
 			<input style="color:#000000" type="button" id="lz-1_submit" value="Go" onClick="handleFormSubmit('lz-1');" />
@@ -49,8 +97,6 @@
 			<div class="col-md-2 col-lg-2 col-sm-2 col-xs-2" style="vertical-align:top">
 				<h3>Most Significant Regions</h3>
 				<div style="color:#6666ff" id="tophits"></div>
-				<h3>To the <a href="http://127.0.0.1:{{ port }}/manhattan">Manhattan Plot</a></h3>
-				<h3>To the <a href="http://127.0.0.1:{{ port }}/QQ">QQ Plot</a></h3>
 			</div>
 		</div>
 	</div>
