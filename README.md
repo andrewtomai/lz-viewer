@@ -13,6 +13,7 @@ The program is ran with multiple options inlucding:
 * `--range` : specify a specific range of format [CHROMOSOME]:[START POSITION]-[END POSITION] to view.
   * if range is specified, the default homepage is the LocusZoom Plot with specified range.
   * if range is not specified, the default homepage is the Manhattan Plot
+
 ### Sample use of command line options:
 python lz-association-viewer.py my_results.gz --range 11:113580000-114150000 --port 5541 
 
