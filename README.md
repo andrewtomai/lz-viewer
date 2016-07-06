@@ -6,13 +6,15 @@ The LocusZoom Association Viewer allows the user to easily view the results of t
 * QQ Plot
 
 ## Command Line Options
+The only required command line argument is the filename, which should be directly after the program name.
 The program is ran with multiple options inlucding:
-* '--help' : list off all of the command line options
-* '--port' : you can specify a port at which to view the results
-* '--range' : specify a specific range of format [CHROMOSOME]:[START POSITION]-[END POSITION] to view.
+* `--help` : list off all of the command line options
+* `--port` : you can specify a port at which to view the results
+* `--range` : specify a specific range of format [CHROMOSOME]:[START POSITION]-[END POSITION] to view.
   * if range is specified, the default homepage is the LocusZoom Plot with specified range.
   * if range is not specified, the default homepage is the Manhattan Plot
-
+### Sample use of command line options:
+python lz-association-viewer.py my_results.gz --range 11:113580000-114150000 --port 5541 
 
 
 ### Manhattan Plot
