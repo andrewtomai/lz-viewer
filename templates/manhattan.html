@@ -16,6 +16,7 @@
 			var region = chrom + ":" + (pos-1e5) + "-" + (pos+1e5);
 			document.location.href = "/lz/" + region;
 		}
+		
 		$(document).ready(function()
 		{
 			$.getJSON("/api/manhattan/").done(function(variants)	
@@ -23,14 +24,29 @@
 				create_gwas_plot("#manhattanplot", variants.variant_bins, variants.unbinned_variants, function(chrom, pos, ref, alt)
 				{
 				jumpToLocusZoom(chrom, pos);
-
+	
 				})
+				$(".se-pre-con").fadeOut("slow");
 			})
 		})
 
+	
 
 	</script>
 	<style>
+		.no-js #loader { display: none;  }
+		.js #loader { display: block; position: absolute; left: 100px; top: 0; }
+		.se-pre-con {
+			position: fixed;
+			left: 0px;
+			top: 130px;
+			width:100%;
+			height: 70%;
+			z-index: 9999;
+			background: url(/static/Preloader_2.gif) center no-repeat #fff;
+		}
+		
+		
 		a:link {
 			color: #6666ff;
 		}
@@ -97,10 +113,11 @@
 	</nav>
 
 	<h1 align="center">Manhattan Plot</h1>
-		
+	<div class="se-pre-con"></div>
 	<div id="manhattanplot"></div>
 	
 	<p>Click <a href="http://127.0.0.1:{{ port }}/api/manhattan/">here </a> to access the api for Manhattan data.</>
 
 </body>
+
 </html>

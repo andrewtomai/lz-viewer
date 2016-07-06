@@ -345,17 +345,17 @@ function create_qq_plot(selector, maf_ranges) {
         // Constrain obs_max in [exp_max, 9.01]. `9.01` preserves the tick `9`.
         obs_max = Math.max(exp_max, Math.min(9.01, obs_max));
 
-        var svg_width = 600; //$(selector).width();
+        var svg_height = 600; //$(selector).width();
         var plot_margin = {
             'left': 70,
             'right': 30,
             'top': 10,
             'bottom': 120,
         };
-        var plot_width = svg_width - plot_margin.left - plot_margin.right;
+        var plot_height = svg_height - plot_margin.top - plot_margin.bottom;
         // Size the plot to make things square.  This way, x_scale and y_scale should be exactly equivalent.
-        var plot_height = plot_width / exp_max * obs_max;
-        var svg_height = plot_height + plot_margin.top + plot_margin.bottom;
+        var plot_width = plot_height / obs_max * exp_max;
+        var svg_width = plot_width + plot_margin.left + plot_margin.right;
 
         var qq_svg = d3.select(selector).append("svg")
             .attr('id', 'qq_svg')
