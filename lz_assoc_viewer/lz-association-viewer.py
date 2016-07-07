@@ -5,8 +5,6 @@ import manhattan_binning
 import qq_to_json
 import Data_reader
 
-import json
-
 from flask import Flask, jsonify, request, render_template, url_for, Response, send_from_directory, redirect
 
 #########################################################################################################
