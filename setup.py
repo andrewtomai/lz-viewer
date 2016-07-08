@@ -12,9 +12,5 @@ setup(
   url = 'https://github.com/atomai/lz_viewer', # use the URL to the github repo
   download_url = 'https://github.com/atomai/lz_viewer/tarball/1.0', # I'll explain this in a second
   keywords = ['LocusZoom ', 'plot ', 'association ', 'genome '], # arbitrary keywords
-  package_data={
-	  '': ['static/*'], 
-	  '': ['templates/*'],
-	  },
   classifiers = [],
 )

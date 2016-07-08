@@ -16,7 +16,7 @@ import re
 import json
 import math
 import collections
-from lz_assoc_viewer import Data_reader
+import Data_reader
 
 BIN_LENGTH = int(3e6)
 NEGLOG10_PVAL_BIN_SIZE = 0.05 # Use 0.05, 0.1, 0.15, etc
