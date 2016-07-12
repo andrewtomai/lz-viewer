@@ -1,2 +1,2 @@
-include lz_assoc_viewer/static/*
-include lz_assoc_viewer/templates/*
+recursive-include lz_assoc_viewer/static *
+recursive-include lz_assoc_viewer/templates *

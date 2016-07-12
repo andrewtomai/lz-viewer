@@ -17,7 +17,7 @@ import re
 import json
 import math
 import collections
-import Data_reader
+from lz_assoc_viewer import Data_reader
 import scipy.stats
 
 data_dir = '/var/pheweb_data/'

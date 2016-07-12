@@ -132,10 +132,9 @@ def api_qq():
 #----------------------------------------------------------------------------------------------------#
 ######################################################################################################
 
-#(main)#
-if __name__ == '__main__':
-	
 
+	
+def main():
 	#check the input arguments
 	arguments = get_options.check_options()
 	global filename
@@ -188,3 +187,9 @@ if __name__ == '__main__':
 	
 	#run the flask webserver
 	lz_app.run(port = port_number, debug=True, threaded=True)
+
+
+
+	#(main)#
+if __name__ == '__main__':
+	main()
