@@ -9,7 +9,21 @@ The LocusZoom Association Viewer allows the user to easily view the results of t
 * LocusZoom Plot
 * QQ Plot
 	* Currently, only available for EPACTS files
- 
+
+Manhattan Plot
+--------------
+The manhattan plot is a scatter plot that plots all points.  However, if the point is not significant enough, it is binned.  Points that are significant enough have tooltips and are clickable.  Upon click, the user is taken to a LocusZoom Plot with a region that is centered on the point clicked.
+
+QQ Plot
+-------
+Eventually, the QQ plot will include clickable tooltips just like the manhattan plot.
+
+LocusZoom Plot
+--------------
+The LocusZoom Plot is a scatterplot of a specific region of a chromosome.  Points have tooltips that show additional information.
+
+
+
 Command Line Options
 --------------------
 The only required command line argument is the filename, which should be directly after the program name.
@@ -27,15 +41,4 @@ Sample use of command line options:
 lz_assoc_viewer my_results.gz 11:113580000-114150000 --port 5541 
 
 
-Manhattan Plot
---------------
-The manhattan plot is a scatter plot that plots all points.  However, if the point is not significant enough, it is binned.  Points that are significant enough have tooltips and are clickable.  Upon click, the user is taken to a LocusZoom Plot with a region that is centered on the point clicked.
-
-QQ Plot
--------
-Eventually, the QQ plot will include clickable tooltips just like the manhattan plot.
-
-LocusZoom Plot
---------------
-The LocusZoom Plot is a scatterplot of a specific region of a chromosome.  Points have tooltips that show additional information.
 
