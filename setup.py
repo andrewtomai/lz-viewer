@@ -4,13 +4,13 @@ from setuptools import setup
 setup(
   name = 'lz_assoc_viewer',
   packages = ['lz_assoc_viewer'], # this must be the same as the name above
-  version = '1.1.8',
+  version = '1.1.10',
   description = 'Locuszoom genome wide association viewer plots',
   author = 'Andrew Tomai',
   author_email = 'andrewtomai23@gmail.com',
   license = "MIT",
   include_package_data=True,
-  install_requires=['Flask'],
+  install_requires=['Flask', 'Numpy', 'Scipy'],
   zip_safe=False,
   url = 'https://github.com/atomai/lz_viewer', # use the URL to the github repo
   download_url = 'https://github.com/atomai/lz_viewer/tarball/1.0', # I'll explain this in a second

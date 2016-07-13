@@ -2,6 +2,8 @@ import re
 import math
 import argparse
 import gzip
+import os
+import sys
 
 ##REQUIRES: nothing
 ##MODIFIES: file_name, port_number
@@ -64,6 +66,7 @@ def get_filetype(arguments, filename):
 	elif PLINK:
 		filetype = "PLINK"
 	else:
+		
 		with gzip.open(filename) as f:
 			line = f.readline()
 			line = line.split()
@@ -73,6 +76,7 @@ def get_filetype(arguments, filename):
 				filetype = "PLINK"
 			else:
 				filetype = "RAREMETAL"
+		
 	return filetype
 
 

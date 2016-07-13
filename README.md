@@ -4,27 +4,46 @@ The LocusZoom Association Viewer allows the user to easily view the results of t
 * Manhattan Plot
 * LocusZoom Plot
 * QQ Plot
+  * Currently, only available for EPACTS files
 
 ## Command Line Options
 The only required command line argument is the filename, which should be directly after the program name.
 The program is ran with multiple options inlucding:
-* `--help` : list off all of the command line options
-* `--port` : you can specify a port at which to view the results
-* `--range` : specify a specific range of format [CHROMOSOME]:[START POSITION]-[END POSITION] to view.
+* `--help`		list off all of the command line options
+* `--port`		you can specify a port at which to view the results
+* `--range`		specify a specific range of format [CHROMOSOME]:[START POSITION]-[END POSITION] to view.
   * if range is specified, the default homepage is the LocusZoom Plot with specified range.
   * if range is not specified, the default homepage is the Manhattan Plot
+* `--EPACTS | --PLINK | --RAREMETAL`		Although this program does have a filetype-autodetect feature, you can explicitly denote filetype to be certain results are correct.
 
-### Sample use of command line options:
-python lz-association-viewer.py my_results.gz --range 11:113580000-114150000 --port 5541 
-
-
-### Manhattan Plot
+###### Manhattan Plot
 The manhattan plot is a scatter plot that plots all points.  However, if the point is not significant enough, it is binned.  Points that are significant enough have tooltips and are clickable.  Upon click, the user is taken to a LocusZoom Plot with a region that is centered on the point clicked.
 
-### QQ Plot
+###### QQ Plot
 Eventually, the QQ plot will include clickable tooltips just like the manhattan plot.
 
-### LocusZoom Plot
+###### LocusZoom Plot
 The LocusZoom Plot is a scatterplot of a specific region of a chromosome.  Points have tooltips that show additional information.
 
+## Installation 
+There are two methods for running this package
+
+######Install this package via pip 
+Run the pip command in your terminal or chosen shell
+```
+pip install lz_assoc_viewer
+```
+Then, run the program using the following syntax:
+```
+lz_assoc_viewer --port [PORT] --range [RANGE] [FILENAME]
+```
+
+###### Download this package from the github repository
+Put your results file and associated tabix file in the program's directory, and then run the program by putting running __main__.py:
+```
+python __main__.py --port [PORT] --range [RANGE] [FILENAME]
+	
+###### Sample use of command line options:
+lz_assoc_viewer my_results.gz --range 11:113580000-114150000 --port 5541 
+(notice, order of arguments is not important)
 

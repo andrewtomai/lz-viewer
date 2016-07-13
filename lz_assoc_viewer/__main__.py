@@ -4,6 +4,8 @@ import minimum_solution
 import manhattan_binning
 import qq_to_json
 import Data_reader
+import sys
+import os
 
 from flask import Flask, jsonify, request, render_template, url_for, Response, send_from_directory, redirect
 
@@ -146,7 +148,24 @@ def main():
 	global range_opt 
 	range_opt = arguments["range"]
 	
-	
+	try:
+		trail = open(filename, 'r')
+
+	except IOError as detail:
+		print >> sys.stderr, detail
+		print >> sys.stderr,  "The file should be in the current working directory: "
+		print >> sys.stderr,  os.getcwd()
+		sys.exit(1)
+
+	try:
+		trail = open(filename + '.tbi', 'r')
+
+	except IOError as detail:
+		print >> sys.stderr, detail
+		print >> sys.stderr,  "This program requires a tabix-indexed file, with the tabix file located in the current working directory: "
+		print >> sys.stderr,  os.getcwd()
+		sys.exit(1)
+			
 	global filetype
 	filetype = get_options.get_filetype(arguments, filename)
 	
