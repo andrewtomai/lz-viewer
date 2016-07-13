@@ -42,6 +42,7 @@ lz_assoc_viewer --port [PORT] --range [RANGE] [FILENAME]
 Put your results file and associated tabix file in the program's directory, and then run the program by putting running __main__.py:
 ```
 python __main__.py --port [PORT] --range [RANGE] [FILENAME]
+```
 	
 ###### Sample use of command line options:
 lz_assoc_viewer my_results.gz --range 11:113580000-114150000 --port 5541 
