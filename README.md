@@ -28,7 +28,7 @@ The program is ran with multiple options inlucding:
 ## Installation 
 There are two methods for running this package
 
-####Install this package via pip 
+####Install this package via pip* 
 Run the pip command in your terminal or chosen shell
 ```
 pip install lz_assoc_viewer
@@ -48,3 +48,4 @@ python __main__.py --port [PORT] --range [RANGE] [FILENAME]
 lz_assoc_viewer my_results.gz --range 11:113580000-114150000 --port 5541 
 (notice, order of arguments is not important)
 
+*not live on pypi yet(7/13/2016)
