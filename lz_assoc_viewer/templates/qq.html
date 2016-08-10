@@ -74,6 +74,9 @@
 			$.getJSON("/api/QQ/?bin=true").done(function(data)
 			{
 				create_qq_plot("#qqplot", data)
+				{
+				jumpToLocusZoom(chrom, pos)
+			}
 
 				
 			})

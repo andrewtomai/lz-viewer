@@ -46,8 +46,26 @@ def find_min_pvals(filename, filetype, num_minimums, region_buffer):
 				highest_min, highest_min_index = find_highest_min(minimums, num_minimums)
 		line = file_reader.get_line()
 	
-		
+	minimums = sort_minimums(minimums, num_minimums)
+	
 	return minimums
+
+
+##REQUIRES minimums has at least two minimums
+##MODIFIES minimums
+##EFFECTS sorts (decreasing order) the dictionary of minimums based on pvalue
+def sort_minimums(minimums, num_minimums):
+	new_minimums = create_baseline_minimums(num_minimums)
+	index = 0 
+	for min in minimums['value']:
+		best = find_min_of_mins(minimums)
+		new_minimums['position'][index] = minimums['position'][best]
+		new_minimums['value'][index] = minimums['value'][best]
+		new_minimums['chromosome'][index] = minimums['chromosome'][best]
+		minimums['value'][best] = 1
+		index += 1
+	
+	return new_minimums
 
 
 ##REQUIRES minimums has at least 1 minimum

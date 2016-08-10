@@ -59,6 +59,7 @@ class Data_reader(object):
 	def get_pval(self):
 		assert self.line != None, "A line hasn't been read yet."
 		line = self.make_line_dict(self.line)
+		
 		return line['pvalue']
 
 	##REQUIRES a line has been read
@@ -171,6 +172,7 @@ class Data_reader(object):
 					names.append(word.lower())
 			if (self.filetype == "RAREMETAL") or (self.filetype == "PLINK"):
 				names.append("id")
+		
 		return names
 
 

@@ -12,11 +12,11 @@ The LocusZoom Association Viewer allows the user to easily view the results of t
 
 Manhattan Plot
 --------------
-The manhattan plot is a scatter plot that plots all points.  However, if the point is not significant enough, it is binned.  Points that are significant enough have tooltips and are clickable.  Upon click, the user is taken to a LocusZoom Plot with a region that is centered on the point clicked.
+The manhattan plot is a scatterplot of all points.  Points have tooltips and are clickable if they are deemed statistically significant ( > 1e-4). However, if the point is deemed as statistically insignificant, it is binned, and therefore will not include tooltips and will not be clickable.  Upon click, the user is taken to a LocusZoom Plot with a region that is centered around the point clicked.
 
 QQ Plot
 -------
-Eventually, the QQ plot will include clickable tooltips just like the manhattan plot.
+The QQ plot generates multiple scatter plots on the same chart based on differing MAF ranges if the input file is EPACTS; Otherwise, a normal QQ plot is generated. 
 
 LocusZoom Plot
 --------------

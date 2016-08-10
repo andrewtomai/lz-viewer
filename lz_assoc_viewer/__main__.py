@@ -7,7 +7,7 @@ import Data_reader
 import json
 import sys
 import os
-
+from werkzeug.contrib.cache import SimpleCache
 from flask import Flask, jsonify, request, render_template, url_for, Response, send_from_directory, redirect
 
 #########################################################################################################
@@ -105,12 +105,17 @@ def api_lz():
 ##EFFECTS returns the JSON api for manhattan plots
 @lz_app.route('/api/manhattan/', methods=['GET'])
 def api_manhattan():
-	file_reader = Data_reader.Data_reader.factory(filename, filetype)
-	variant_bins, unbinned_variants = manhattan_binning.bin_variants(file_reader)
-	rv = {
-		'variant_bins': variant_bins,
-		'unbinned_variants': unbinned_variants,
-		}
+	
+	rv = cache.get('manhattan')
+	if rv is None:
+		file_reader = Data_reader.Data_reader.factory(filename, filetype)
+		variant_bins, unbinned_variants = manhattan_binning.bin_variants(file_reader)
+
+		rv = {
+			'variant_bins': variant_bins,
+			'unbinned_variants': unbinned_variants,
+			}
+		cache.set('manhattan', rv)
 	return jsonify(rv)
 	
 ##REQUIRES nothing
@@ -118,16 +123,19 @@ def api_manhattan():
 ##EFFECTS returns the JSON api for QQ plots
 @lz_app.route('/api/QQ/', methods=['GET'])
 def api_qq():
-	bin = request.args.get('bin')
-	file_reader = Data_reader.Data_reader.factory(filename, filetype)
-	
-	if (bin == 'true' or bin == 'True') and filetype == 'EPACTS' :
-		
-		rv = qq_to_json.make_qq_stratified(file_reader)
-	
-	else:
-		rv = qq_to_json.make_qq(file_reader)
+	rv = cache.get('qq')
+	if rv is None:
 
+		bin = request.args.get('bin')
+		file_reader = Data_reader.Data_reader.factory(filename, filetype)
+	
+		if (bin == 'true' or bin == 'True') and filetype == 'EPACTS' :
+		
+			rv = qq_to_json.make_qq_stratified(file_reader)
+	
+		else:
+			rv = qq_to_json.make_qq(file_reader)
+		cache.set('qq', rv)
 	resp = Response(response=json.dumps(rv), status=200, mimetype="application/json")
 	return resp
 
@@ -185,6 +193,7 @@ def main():
 	global hits
 	hits = minimum_solution.create_hits(minimums)
 	
+	
 #find the minimum pvalue
 	if minimum:
 		min_index = minimum_solution.find_min_of_mins(minimums)
@@ -204,9 +213,12 @@ def main():
 	
 	
 
+	global cache
+	cache = SimpleCache()
 	
+
 	#run the flask webserver
-	lz_app.run(port = port_number, debug=True, threaded=True)
+	lz_app.run(port = port_number, debug=False, threaded=True)
 
 
 

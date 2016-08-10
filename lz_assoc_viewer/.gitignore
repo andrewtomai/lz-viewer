@@ -19,13 +19,14 @@
 *.rar
 *.tar
 *.zip
+*.tbi
 # special files #
 #################
 make_manhattan_json.py
 raremetal.*
 plink.*
 assoc.*
-venv/
+/venv/
 
 
 # Logs and databases #
