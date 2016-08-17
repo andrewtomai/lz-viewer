@@ -8,8 +8,8 @@ function fmt(format) {
 
 var tooltip_template_data =
     "<%= d.chrom %>:<%= d.pos.toLocaleString() %> <%= d.ref %> &gt; <%= d.alt %><br>" +
-    "pval: <%= d.pval %><br>" +
-    "MAF: <%= d.maf %><br>";
+    "pval: <%= d.pval %><br>"; // +
+// "MAF: <%= d.maf %><br>";
 
 function create_gwas_plot(selector, variant_bins, unbinned_variants, on_variant_click) {
 

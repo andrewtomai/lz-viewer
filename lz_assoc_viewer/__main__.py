@@ -7,12 +7,14 @@ import Data_reader
 import json
 import sys
 import os
+import site
 from werkzeug.contrib.cache import SimpleCache
 from flask import Flask, jsonify, request, render_template, url_for, Response, send_from_directory, redirect
 
 #########################################################################################################
 #--------------------------------------Flask initialization---------------------------------------------#	
 lz_app = Flask(__name__, static_url_path='')
+
 @lz_app.after_request
 def after_request(response):
 	response.headers.add('Access-Control-Allow-Origin', '*')
@@ -22,7 +24,10 @@ def after_request(response):
 
 @lz_app.route('/static/<path:path>')
 def send_js(path):
-    return send_from_directory('static', path)
+	static_location = site.getsitepackages()[0]
+	version_number = '1.0.0'
+	static_location = str(static_location + '/lz_assoc_viewer-' + version_number + '-py2.7.egg/lz_assoc_viewer/static/')
+	return send_from_directory(static_location, path)
 
 ##REQUIRES nothing
 ##MODIFIES lz_app
