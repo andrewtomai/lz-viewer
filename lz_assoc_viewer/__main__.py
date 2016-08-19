@@ -142,7 +142,7 @@ def api_qq():
 			rv = qq_to_json.make_qq_stratified(file_reader)
 	
 		else:
-			rv = qq_to_json.make_qq(file_reader)
+			rv = qq_to_json.make_qq_stratified(file_reader)
 		cache.set('qq', rv)
 	resp = Response(response=json.dumps(rv), status=200, mimetype="application/json")
 	return resp

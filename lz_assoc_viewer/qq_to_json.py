@@ -25,6 +25,7 @@ NEGLOG10_PVAL_BIN_SIZE = 0.05 # Use 0.05, 0.1, 0.15, etc
 NEGLOG10_PVAL_BIN_DIGITS = 2 # Then keep 2 digits after the decimal
 NUM_BINS = 1000
 
+global NUM_MAF_RANGES
 NUM_MAF_RANGES = 4 # Split MAF into 4 equally-sized ranges
 
 
@@ -54,7 +55,12 @@ def parse_variant_line(file_reader):
 	
 	if file_reader.get_pval() == 'NA':
 		return None
-
+	elif file_reader.get_maf() is None:
+		maf = float(1)
+		pval = float(file_reader.get_pval())
+		global NUM_MAF_RANGES
+		NUM_MAF_RANGES = 1
+		return Variant(-math.log10(pval), maf)
 	else:
 		maf = float(file_reader.get_maf())
 		pval = float(file_reader.get_pval())
@@ -85,8 +91,10 @@ def make_qq_stratified(file_reader):
 		if variant is not None:
 			variants.append(variant)
 	variants = sorted(variants, key=lambda v: v.maf)
+	
 
 	##QQ
+	
 	num_variants_in_biggest_maf_range = int(math.ceil(len(variants) / NUM_MAF_RANGES))
 	max_exp_neglog10_pval = -math.log10(0.5 / num_variants_in_biggest_maf_range) #expected
 	max_obs_neglog10_pval = max(v.neglog10_pval for v in variants) #observed
