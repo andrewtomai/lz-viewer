@@ -23,11 +23,14 @@ def after_request(response):
 	return response
 
 @lz_app.route('/static/<path:path>')
+#def send_js(path):
+#	static_location = site.getsitepackages()[0]
+#	version_number = '1.0.0'
+#	static_location = str(static_location + '/lz_assoc_viewer-' + version_number + '-py2.7.egg/lz_assoc_viewer/static/')
+#	return send_from_directory(static_location, path)
+
 def send_js(path):
-	static_location = site.getsitepackages()[0]
-	version_number = '1.0.0'
-	static_location = str(static_location + '/lz_assoc_viewer-' + version_number + '-py2.7.egg/lz_assoc_viewer/static/')
-	return send_from_directory(static_location, path)
+	return lz_app.send_static_file(path)
 
 ##REQUIRES nothing
 ##MODIFIES lz_app
