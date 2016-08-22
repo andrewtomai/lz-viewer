@@ -52,7 +52,7 @@ def manhattan():
 	
 	else:
 		default_range = minimum_range
-	return render_template("manhattan.html", port=port_number, default_range=default_range)
+	return render_template("manhattan.html", host=host, port=port_number, default_range=default_range)
 
 
 ##REQUIRES nothing
@@ -60,7 +60,7 @@ def manhattan():
 ##EFFECTS renders the lz plot template
 @lz_app.route('/lz/<region>')
 def lz_region(region):
-	return render_template("lz-association-viewer.html", port=port_number, region=region, hits=hits, filetype=filetype)
+	return render_template("lz-association-viewer.html", host=host, port=port_number, region=region, hits=hits, filetype=filetype)
 
 
 ##REQUIRES nothing
@@ -72,7 +72,7 @@ def QQ_plot():
 		default_range = range_opt
 	else: 
 		default_range = minimum_range
-	return render_template("qq.html", port=port_number, default_range=default_range)
+	return render_template("qq.html", host=host, port=port_number, default_range=default_range)
 
 @lz_app.route('/api/lz-results/', methods=['GET'])
 
@@ -164,6 +164,9 @@ def main():
 	minimum = arguments["minimum"]
 	global range_opt 
 	range_opt = arguments["range"]
+	global host
+	host = arguments["host"]
+	
 	
 	try:
 		trail = open(filename, 'r')
@@ -226,7 +229,7 @@ def main():
 	
 
 	#run the flask webserver
-	lz_app.run(port = port_number, debug=False, threaded=True)
+	lz_app.run(host = host, port = port_number, debug=False, threaded=True)
 
 
 

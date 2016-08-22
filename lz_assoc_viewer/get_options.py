@@ -15,6 +15,8 @@ def check_options():
 	parser.add_argument("-p", "--port", help="Specify a port at which to view results", type=int)
 	#add the filename argument
 	parser.add_argument("filename", type=str, help="Provide the name of the file to be graphed")
+	#add the host argument
+	parser.add_argument("--host", help="Specify a host at which to view results", type=str)
 
 	filetype = parser.add_mutually_exclusive_group()
 	#add the "RAREMETAL" argument
@@ -36,7 +38,12 @@ def check_options():
 
 	else: #otherwise the default port is 5000
 		port_number = 5000
-		
+	#if a host was specified
+	if args.host:
+		host = args.host
+	else: #otherwise the default is localhost
+		host = '127.0.0.1'
+
 	minimum = False 
 	range = None
 	#if a range was specified
@@ -47,7 +54,7 @@ def check_options():
 
 
 	#return a dictionary including the filename and port number
-	return {'filename' : file, 'port_number' : port_number, 'range' : range, 'minimum' : minimum, 'EPACTS': args.EPACTS, 'RAREMETAL' : args.RAREMETAL, 'PLINK' : args.PLINK}
+	return {'host' : host, 'filename' : file, 'port_number' : port_number, 'range' : range, 'minimum' : minimum, 'EPACTS': args.EPACTS, 'RAREMETAL' : args.RAREMETAL, 'PLINK' : args.PLINK}
 
 
 

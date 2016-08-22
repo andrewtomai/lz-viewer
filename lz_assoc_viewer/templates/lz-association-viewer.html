@@ -74,8 +74,8 @@
 				<a class="navbar-brand" href="#">Your Results</a>
 			</div>
 			<ul class="nav navbar-nav">
-				<li><a href="http://127.0.0.1:{{ port }}/manhattan">Manhattan Plot</a></li>
-				<li><a href="http://127.0.0.1:{{ port }}/QQ">QQ Plot</a></li>
+				<li><a href="http://{{host}}:{{ port }}/manhattan">Manhattan Plot</a></li>
+				<li><a href="http://{{host}}:{{ port }}/QQ">QQ Plot</a></li>
 				<li class="active"><a href="#">LocusZoom Plot</a></li>
 			</ul>
 		</div>
@@ -105,7 +105,7 @@
 	<script type="text/javascript">
 
 		// Define LocusZoom Data Sources object
-		var localBase = "http://127.0.0.1:" + {{ port }} + "/api/lz-";
+		var localBase = "http://{{ host }}:" + {{ port }} + "/api/lz-";
 		var remoteBase = "http://portaldev.sph.umich.edu/api/v1/";
 		var data_sources = new LocusZoom.DataSources();
 		data_sources.add("base", ["AssociationLZ", localBase]);
