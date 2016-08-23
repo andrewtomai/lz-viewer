@@ -1,4 +1,4 @@
-﻿F<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -105,9 +105,9 @@
 				<a class="navbar-brand" href="#">Your Results</a>
 			</div>
 			<ul class="nav navbar-nav">
-				<li><a href="http://{{ host }}:{{ port }}/manhattan">Manhattan Plot</a></li>
+				<li><a href="/manhattan">Manhattan Plot</a></li>
 				<li class="active"><a href="#">QQ Plot</a></li>
-				<li><a href="http://{{ host }}:{{ port }}/lz/{{ default_range }}">LocusZoom Plot</a></li>
+				<li><a href="/lz/{{ default_range }}">LocusZoom Plot</a></li>
 			</ul>
 		</div>
 	</nav>
@@ -116,8 +116,8 @@
 	<div id="qqplot"></div>
 	<p>&nbsp;</p>
 	
-	<p>Click <a href="http://{{ host }}:{{ port }}/api/QQ/?bin=true">here </a> to access the api for <b>BINNED</b> QQ data.</p>
-	<p>Click <a href="http://{{ host }}:{{ port }}/api/QQ/">here </a> to access the api for <b>UNBINNED</b> QQ data.</p>
+	<p>Click <a href="/api/QQ/?bin=true">here </a> to access the api for <b>BINNED</b> QQ data.</p>
+	<p>Click <a href="/api/QQ/">here </a> to access the api for <b>UNBINNED</b> QQ data.</p>
 	
 </body>
 </html>
