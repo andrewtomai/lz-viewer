@@ -3,41 +3,18 @@
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 	<script src="/static/plot.js"></script>
-    <meta charset="utf-8" />
-    <title>Manhattan Plot Demo</title>
+	<meta charset="utf-8" />
+	<title>QQ Plot</title>
 	<script src="https://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.16/d3.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.6.7/d3-tip.min.js"></script>
-	
 	<!-- Latest compiled and minified CSS -->
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 	<!-- Optional theme -->
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
 	<!-- Latest compiled and minified JavaScript -->
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-	<script type="text/javascript">
-		var jumpToLocusZoom = function (chrom, pos) {
-			var region = chrom + ":" + (pos-1e5) + "-" + (pos+1e5);
-			document.location.href = "/lz/" + region;
-		}
-		
-		$(document).ready(function()
-		{
-			$.getJSON("/api/manhattan/").done(function(variants)	
-			{
-				create_gwas_plot("#manhattanplot", variants.variant_bins, variants.unbinned_variants, function(chrom, pos, ref, alt)
-				{
-				jumpToLocusZoom(chrom, pos);
-	
-				})
-				$(".se-pre-con").fadeOut("slow");
-			})
-		})
-
-	
-
-	</script>
 	<style>
 		.no-js #loader { display: none;  }
 		.js #loader { display: block; position: absolute; left: 100px; top: 0; }
@@ -50,8 +27,10 @@
 			z-index: 9999;
 			background: url(/static/Preloader_2.gif) center no-repeat #fff;
 		}
-		
-		
+		.axis g.tick line {
+			stroke: #666;
+			opacity: 0.3;
+		}
 		a:link {
 			color: #6666ff;
 		}
@@ -101,9 +80,30 @@
 			color: #666e92; /*Change active text color here*/
 		}
 	</style>
+	<script type="text/javascript">
+		var jumpToLocusZoom = function (chrom, pos) {
+			var region = chrom + ":" + (pos-1e5) + "-" + (pos+1e5);
+			document.location.href = "/lz/" + region;
+		}
+		$(document).ready(function()
+		{
+			$.getJSON("/api/QQ/?bin=true").done(function(data)
+			{
+				create_qq_plot("#qqplot", data)
+				{
+				
+			}
+			$(".se-pre-con").fadeOut("slow");
 
+				
+			})
+		})
+
+
+
+	</script>
 </head>
-<body style="background-color: #f2f2f2; margin: 10px;">
+<body>
 	<nav class="navbar navbar-default">
 		<div class="container-fluid">
 			<div class="navbar-header">
@@ -117,23 +117,23 @@
 						<span class="caret"></span>
 					</a>
 					<ul class="dropdown-menu">
-						<li><a href="/QQ-bin">Binned QQ Plot</a></li>
-						<li><a href="/QQ-unbin">Unbinned QQ Plot</a></li>
+						<li class="active"><a href="#">Binned QQ Plot</a></li>
+						<li><a href="/QQ-unbin">Unbinned QQ Plot</a></li>	
 					</ul>
 				</li>
-
-
+				
+				
 				<li><a href="/lz/{{ default_range }}">LocusZoom Plot</a></li>
 			</ul>
 		</div>
 	</nav>
-
-	<h1 align="center">Manhattan Plot</h1>
+	<h1 align="center">QQ Plot</h1>
 	<div class="se-pre-con"></div>
-	<div id="manhattanplot"></div>
+	<div id="qqplot"></div>
+	<p>&nbsp;</p>
 	
-	<p>Click <a href="/api/manhattan/">here </a> to access the api for Manhattan data.</>
-
+	<p>Click <a href="/api/QQ/?bin=true">here </a> to access the api for <b>BINNED</b> QQ data.</p>
+	<p>Click <a href="/api/QQ/">here </a> to access the api for <b>UNBINNED</b> QQ data.</p>
+	
 </body>
-
 </html>

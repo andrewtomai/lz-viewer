@@ -68,11 +68,24 @@ def lz_region(region):
 ##EFFECTS renders the qq plot template
 @lz_app.route('/QQ/')
 def QQ_plot():
+	
+	return redirect(url_for("QQ_plot_unbin"))
+
+@lz_app.route('/QQ-unbin/')
+def QQ_plot_unbin():
 	if range_opt:
 		default_range = range_opt
 	else: 
 		default_range = minimum_range
-	return render_template("qq.html", default_range=default_range)
+	return render_template("qq-unbin.html", default_range=default_range)
+
+@lz_app.route('/QQ-bin/')
+def QQ_plot_bin():
+	if range_opt:
+		default_range = range_opt
+	else: 
+		default_range = minimum_range
+	return render_template("qq-bin.html", default_range=default_range)
 
 @lz_app.route('/api/lz-results/', methods=['GET'])
 
@@ -132,18 +145,21 @@ def api_manhattan():
 @lz_app.route('/api/QQ/', methods=['GET'])
 def api_qq():
 	rv = cache.get('qq')
-	if rv is None:
-
-		bin = request.args.get('bin')
-		file_reader = Data_reader.Data_reader.factory(filename, filetype)
+	bin_status = cache.get('bin_status')
+	bin = request.args.get('bin')
 	
+	if rv is None or (bin_status is not bin):
+
+		file_reader = Data_reader.Data_reader.factory(filename, filetype)
+		
 		if (bin == 'true' or bin == 'True') and filetype == 'EPACTS' :
 		
-			rv = qq_to_json.make_qq_stratified(file_reader)
+			rv = qq_to_json.make_qq_stratified(file_reader, True)
 	
 		else:
-			rv = qq_to_json.make_qq_stratified(file_reader)
+			rv = qq_to_json.make_qq_stratified(file_reader, False)
 		cache.set('qq', rv)
+		cache.set('bin_status', bin)
 	resp = Response(response=json.dumps(rv), status=200, mimetype="application/json")
 	return resp
 
@@ -230,7 +246,7 @@ def main():
 	
 
 	#run the flask webserver
-	lz_app.run(host = host, port = port_number, debug=False, threaded=True)
+	lz_app.run(host = host, port = port_number, debug=True, threaded=True)
 
 
 

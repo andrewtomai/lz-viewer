@@ -4,7 +4,7 @@ from setuptools import setup
 setup(
   name = 'lz_assoc_viewer',
   packages = ['lz_assoc_viewer'], # this must be the same as the name above
-  version = '1.0.0',
+  version = '1.0.2',
   description = 'Locuszoom genome wide association viewer plots',
   author = 'Andrew Tomai',
   author_email = 'andrewtomai23@gmail.com',

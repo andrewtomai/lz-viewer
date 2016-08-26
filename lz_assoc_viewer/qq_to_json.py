@@ -51,7 +51,7 @@ assert approx_equal(gc_value(0.6123), 0.5645607)
 
 
 Variant = collections.namedtuple('Variant', ['neglog10_pval', 'maf'])
-def parse_variant_line(file_reader):
+def parse_variant_line(file_reader, bin_bool):
 	
 	if file_reader.get_pval() == 'NA':
 		return None
@@ -61,7 +61,17 @@ def parse_variant_line(file_reader):
 		global NUM_MAF_RANGES
 		NUM_MAF_RANGES = 1
 		return Variant(-math.log10(pval), maf)
+
+	elif bin_bool is False:
+		maf = float(1)
+		pval = float(file_reader.get_pval())
+		global NUM_MAF_RANGES
+		NUM_MAF_RANGES = 1
+		return Variant(-math.log10(pval), maf)
+
 	else:
+		global NUM_MAF_RANGES
+		NUM_MAF_RANGES = 4
 		maf = float(file_reader.get_maf())
 		pval = float(file_reader.get_pval())
 
@@ -74,7 +84,7 @@ def rounded(x):
 
 
 ##FOR EPACTS FILES
-def make_qq_stratified(file_reader):
+def make_qq_stratified(file_reader, bin_bool):
 	variants = []
 	
 	#skip the header info
@@ -87,7 +97,7 @@ def make_qq_stratified(file_reader):
 		#check if we are at the end
 		if file_reader.is_end():
 			break
-		variant = parse_variant_line(file_reader)
+		variant = parse_variant_line(file_reader, bin_bool)
 		if variant is not None:
 			variants.append(variant)
 	variants = sorted(variants, key=lambda v: v.maf)

@@ -9,7 +9,12 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.16/d3.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.6.7/d3-tip.min.js"></script>
-	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<!-- Optional theme -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+	<!-- Latest compiled and minified JavaScript -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 	<style>
 		.no-js #loader { display: none;  }
 		.js #loader { display: block; position: absolute; left: 100px; top: 0; }
@@ -82,7 +87,7 @@
 		}
 		$(document).ready(function()
 		{
-			$.getJSON("/api/QQ/?bin=true").done(function(data)
+			$.getJSON("/api/QQ/?bin=false").done(function(data)
 			{
 				create_qq_plot("#qqplot", data)
 				{
@@ -106,7 +111,18 @@
 			</div>
 			<ul class="nav navbar-nav">
 				<li><a href="/manhattan">Manhattan Plot</a></li>
-				<li class="active"><a href="#">QQ Plot</a></li>
+				<li class="dropdown">
+					<a class="dropdown-toggle" data-toggle="dropdown" href="#">
+						QQ Plot
+						<span class="caret"></span>
+					</a>
+					<ul class="dropdown-menu">
+						<li><a href="/QQ-bin">Binned QQ Plot</a></li>
+						<li class="active"><a href="#">Unbinned QQ Plot</a></li>	
+					</ul>
+				</li>
+				
+				
 				<li><a href="/lz/{{ default_range }}">LocusZoom Plot</a></li>
 			</ul>
 		</div>
