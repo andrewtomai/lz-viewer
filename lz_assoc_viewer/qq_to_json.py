@@ -20,6 +20,30 @@ import collections
 from lz_assoc_viewer import Data_reader
 import scipy.stats
 
+class tooltip_info(object):
+	#initialize with neglogpval, pval, chrom, and position
+	def __init__(self, neglog10pval, pval, chrom, position):
+		self.neglog10pval = neglog10pval
+		self.pval = pval
+		self.chrom = chrom
+		self.pos = position
+
+	def get_neglog10pval(self):
+		return self.neglog10pval
+
+	def get_pval(self):
+		return self.pval
+
+	def get_chrom(self):
+		return self.chrom
+
+	def get_pos(self):
+		return self.pos
+
+	def __lt__(self, other):
+		return self.neglog10pval < other.neglog10pval
+
+
 data_dir = '/var/pheweb_data/'
 NEGLOG10_PVAL_BIN_SIZE = 0.05 # Use 0.05, 0.1, 0.15, etc
 NEGLOG10_PVAL_BIN_DIGITS = 2 # Then keep 2 digits after the decimal
@@ -52,30 +76,38 @@ assert approx_equal(gc_value(0.6123), 0.5645607)
 
 Variant = collections.namedtuple('Variant', ['neglog10_pval', 'maf'])
 def parse_variant_line(file_reader, bin_bool):
-	
+	global NUM_MAF_RANGES
 	if file_reader.get_pval() == 'NA':
 		return None
 	elif file_reader.get_maf() is None:
 		maf = float(1)
 		pval = float(file_reader.get_pval())
-		global NUM_MAF_RANGES
+		chrom = file_reader.get_chrom()
+		position = file_reader.get_pos()
+
 		NUM_MAF_RANGES = 1
-		return Variant(-math.log10(pval), maf)
+		neglog10_pval = tooltip_info(-math.log10(pval), pval, chrom, position)
+		return Variant(tooltip_info, maf)
 
 	elif bin_bool is False:
 		maf = float(1)
 		pval = float(file_reader.get_pval())
-		global NUM_MAF_RANGES
+		chrom = file_reader.get_chrom()
+		position = file_reader.get_pos()
+		neglog10_pval = tooltip_info(-math.log10(pval), pval, chrom, position)
+		
 		NUM_MAF_RANGES = 1
-		return Variant(-math.log10(pval), maf)
+		return Variant(neglog10_pval, maf)
 
 	else:
-		global NUM_MAF_RANGES
+		
 		NUM_MAF_RANGES = 4
 		maf = float(file_reader.get_maf())
 		pval = float(file_reader.get_pval())
-
-		return Variant(-math.log10(pval), maf)
+		chrom = file_reader.get_chrom()
+		position = file_reader.get_pos()
+		neglog10_pval = tooltip_info(-math.log10(pval), pval, chrom, position)
+		return Variant(neglog10_pval, maf)
 
 
 def rounded(x):
@@ -107,38 +139,73 @@ def make_qq_stratified(file_reader, bin_bool):
 	
 	num_variants_in_biggest_maf_range = int(math.ceil(len(variants) / NUM_MAF_RANGES))
 	max_exp_neglog10_pval = -math.log10(0.5 / num_variants_in_biggest_maf_range) #expected
-	max_obs_neglog10_pval = max(v.neglog10_pval for v in variants) #observed
+	max_obs_neglog10_pval = max(v.neglog10_pval for v in variants).get_neglog10pval() #observed
 	# TODO: should max_obs_neglog10_pval be at most 9?  That'd break our assertions.
 	# print(max_exp_neglog10_pval, max_obs_neglog10_pval)
 
 	qqs = [dict() for i in range(NUM_MAF_RANGES)]
+	
 	for qq_i in range(NUM_MAF_RANGES):
 		slice_indices = (len(variants) * qq_i//4, len(variants) * (qq_i+1)//NUM_MAF_RANGES - 1)
 		qqs[qq_i]['maf_range'] = (variants[slice_indices[0]].maf, variants[slice_indices[1]].maf)
 		neglog10_pvals = sorted((v.neglog10_pval for v in variants[slice(*slice_indices)]), reverse=True)
+		
 		qqs[qq_i]['count'] = len(neglog10_pvals)
-
+		trumpets = make_trumpets(len(neglog10_pvals))
+		qqs[qq_i]['conf_int'] = trumpets
+		
 		occupied_bins = set()
 		for i, obs_neglog10_pval in enumerate(neglog10_pvals):
 			exp_neglog10_pval = -math.log10( (i+0.5) / len(neglog10_pvals))
 			exp_bin = int(exp_neglog10_pval / max_exp_neglog10_pval * NUM_BINS)
-			obs_bin = int(obs_neglog10_pval / max_obs_neglog10_pval * NUM_BINS)
-			occupied_bins.add( (exp_bin,obs_bin) )
-		# print(sorted(occupied_bins))
+			obs_bin = int(obs_neglog10_pval.get_neglog10pval() / max_obs_neglog10_pval * NUM_BINS)
+			occupied_bins.add( (exp_bin,obs_bin,obs_neglog10_pval.get_chrom(), obs_neglog10_pval.get_pos(), obs_neglog10_pval.get_pval()) )
+		#print(sorted(occupied_bins))
 
 		qq = []
-		for exp_bin, obs_bin in occupied_bins:
+		for exp_bin, obs_bin, obs_chrom, obs_pos, obs_pval in occupied_bins:
 			assert 0 <= exp_bin <= NUM_BINS, exp_bin
 			assert 0 <= obs_bin <= NUM_BINS, obs_bin
 			qq.append((
 				exp_bin / NUM_BINS * max_exp_neglog10_pval,
-				obs_bin / NUM_BINS * max_obs_neglog10_pval
+				obs_bin / NUM_BINS * max_obs_neglog10_pval,
+				obs_chrom,
+				obs_pos,
+				obs_pval
 			))
 		qq = sorted(qq)
 
 		qqs[qq_i]['qq'] = qq
 
 	return qqs
+
+def get_x_y0_y1(i, nvar):
+	rv = scipy.stats.beta(i, nvar-i)
+	x = -math.log10((i-0.5)/nvar)
+	x = round(x, 2)
+	y0 = -math.log10(rv.ppf(.05/2))
+	y0 = round(x, 2)
+	y1 = -math.log10(rv.ppf(1-(.05/2)))
+	y1 = round(x, 2)
+	return [x, y0, y1]
+
+def make_trumpets(nvar):
+	slices = []
+	log2 = math.log(nvar, 2)
+	log2 = math.ceil(log2)
+	log2 = int(log2)
+	
+	for x in range(0, log2):
+		slices.append(2**x)
+
+	slices.append(nvar-1)
+	slices.reverse()
+	
+	points = []
+	for slice in slices:
+		triplet = get_x_y0_y1(slice, nvar)
+		points.append(triplet)
+	return points
 
 
 
