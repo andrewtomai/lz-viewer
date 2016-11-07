@@ -8,6 +8,7 @@ import json
 import sys
 import os
 import site
+import threading
 from werkzeug.contrib.cache import SimpleCache
 from flask import Flask, jsonify, request, render_template, url_for, Response, send_from_directory, redirect
 
@@ -60,6 +61,9 @@ def manhattan():
 ##EFFECTS renders the lz plot template
 @lz_app.route('/lz/<region>')
 def lz_region(region):
+	if(not minimum_thread.isAlive()):
+		hits = minimum_solution.create_hits(minimum_thread);
+		
 	return render_template("lz-association-viewer.html", region=region, hits=hits, filetype=filetype)
 
 
@@ -129,13 +133,22 @@ def api_manhattan():
 	
 	rv = cache.get('manhattan')
 	if rv is None:
-		file_reader = Data_reader.Data_reader.factory(filename, filetype)
-		variant_bins, unbinned_variants = manhattan_binning.bin_variants(file_reader)
+		#if not cached on server, check if its cached on local disk
+		if os.path.isfile(filename + '.manhattan.json'):
+			cache_fileobj = open(filename + '.manhattan.json', 'r')
+			rv = cache_fileobj.read()
+		
+		else:
+			file_reader = Data_reader.Data_reader.factory(filename, filetype)
+			variant_bins, unbinned_variants = manhattan_binning.bin_variants(file_reader)
 
-		rv = {
-			'variant_bins': variant_bins,
-			'unbinned_variants': unbinned_variants,
-			}
+			rv = {
+				'variant_bins': variant_bins,
+				'unbinned_variants': unbinned_variants,
+				}
+			cache_fileobj = open(filename + '.manhattan.json', 'w')
+			cache_fileobj.write(json.dumps(rv))
+
 		cache.set('manhattan', rv)
 	return jsonify(rv)
 	
@@ -144,20 +157,37 @@ def api_manhattan():
 ##EFFECTS returns the JSON api for QQ plots
 @lz_app.route('/api/QQ/', methods=['GET'])
 def api_qq():
+	#check if we saved a cache from a previous run
+	
 	rv = cache.get('qq')
 	bin_status = cache.get('bin_status')
 	bin = request.args.get('bin')
 	
 	if rv is None or (bin_status is not bin):
-
 		file_reader = Data_reader.Data_reader.factory(filename, filetype)
-		
-		if (bin == 'true' or bin == 'True') and filetype == 'EPACTS' :
-		
-			rv = qq_to_json.make_qq_stratified(file_reader, True)
+		#if its not cached on server, check if its cached on the local disk
+		if (bin == 'true' or bin == 'True'):
+			if os.path.isfile(filename + '.qq.bin.json'):
+				cache_fileobj = open(filename + '.qq.json', 'r')
+				rv = cache_fileobj.read()
+			
+			elif filetype == 'EPACTS':
+				rv = qq_to_json.make_qq_stratified(file_reader, True)
+				#write to local disk
+				cache_fileobj = open(filename + '.qq.bin.json', 'w')
+				cache_fileobj.write(json.dumps(rv))
+
+		elif (bin == 'false' or bin == 'False'):
+			if os.path.isfile(filename + '.qq.unbin.json'):
+				cache_fileobj = open(filename + '.qq.unbin.json', 'r')
+				rv = cache_fileobj.read()
 	
-		else:
-			rv = qq_to_json.make_qq_stratified(file_reader, False)
+			else:
+				rv = qq_to_json.make_qq_stratified(file_reader, False)
+				#write to local disk
+				cache_fileobj = open(filename+ '.qq.unbin.json', 'w')
+				cache_fileobj.write(json.dumps(rv))
+
 		cache.set('qq', rv)
 		cache.set('bin_status', bin)
 	resp = Response(response=json.dumps(rv), status=200, mimetype="application/json")
@@ -212,14 +242,20 @@ def main():
 	global header
 	header = file_reader.header
 	
+	global hits
+	hits = minimum_solution.create_hits(minimum_solution.create_baseline_minimums(10))
+	global minimum_thread;
+	minimum_thread = threading.Thread(target=minimum_solution.find_min_pvals, args=(filename, filetype, 10, 102400))
+	minimum_thread.start()
+	
 
 	#find the minimums
-	minimums = minimum_solution.find_min_pvals(filename, filetype, 10, 102400)
+	#minimums = minimum_solution.find_min_pvals(filename, filetype, 10, 102400)
 	
 	
 	#create a list of 'hits'
-	global hits
-	hits = minimum_solution.create_hits(minimums)
+	
+	#hits = minimum_solution.create_hits(minimums)
 	
 	
 #find the minimum pvalue

@@ -1,2 +1,2 @@
 clean:
-	rm -vf *.pyc
+	rm -vf *.pyc *.json

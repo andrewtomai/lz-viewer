@@ -42,6 +42,9 @@ class tooltip_info(object):
 
 	def __lt__(self, other):
 		return self.neglog10pval < other.neglog10pval
+	
+	def __gt__(self, other):
+		return self.neglog10pval > other.neglog10pval
 
 
 data_dir = '/var/pheweb_data/'
@@ -87,7 +90,7 @@ def parse_variant_line(file_reader, bin_bool):
 
 		NUM_MAF_RANGES = 1
 		neglog10_pval = tooltip_info(-math.log10(pval), pval, chrom, position)
-		return Variant(tooltip_info, maf)
+		return Variant(neglog10_pval, maf)
 
 	elif bin_bool is False:
 		maf = float(1)
@@ -107,6 +110,7 @@ def parse_variant_line(file_reader, bin_bool):
 		chrom = file_reader.get_chrom()
 		position = file_reader.get_pos()
 		neglog10_pval = tooltip_info(-math.log10(pval), pval, chrom, position)
+		
 		return Variant(neglog10_pval, maf)
 
 
@@ -184,9 +188,9 @@ def get_x_y0_y1(i, nvar):
 	x = -math.log10((i-0.5)/nvar)
 	x = round(x, 2)
 	y0 = -math.log10(rv.ppf(.05/2))
-	y0 = round(x, 2)
+	y0 = round(y0, 2)
 	y1 = -math.log10(rv.ppf(1-(.05/2)))
-	y1 = round(x, 2)
+	y1 = round(y1, 2)
 	return [x, y0, y1]
 
 def make_trumpets(nvar):
