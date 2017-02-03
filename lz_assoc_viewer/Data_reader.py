@@ -263,7 +263,8 @@ class Data_reader(object):
 						highbits = unpack('H', tabix.read(2))[0]
 
 					#if we have gotten or surpassed the start index
-					elif x >= index:
+					#elif x >= index:
+					else:
 						lowbits = tabix.read(2)
 						if lowbits == '':
 							end_actual_offset = -1

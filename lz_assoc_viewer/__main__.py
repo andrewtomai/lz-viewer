@@ -1,7 +1,8 @@
-
+import ast
 import get_options
 import minimum_solution
 import manhattan_binning
+import Minimum_Thread
 import qq_to_json
 import Data_reader
 import json
@@ -11,6 +12,7 @@ import site
 import threading
 from werkzeug.contrib.cache import SimpleCache
 from flask import Flask, jsonify, request, render_template, url_for, Response, send_from_directory, redirect
+
 
 #########################################################################################################
 #--------------------------------------Flask initialization---------------------------------------------#	
@@ -24,12 +26,6 @@ def after_request(response):
 	return response
 
 @lz_app.route('/static/<path:path>')
-#def send_js(path):
-#	static_location = site.getsitepackages()[0]
-#	version_number = '1.0.0'
-#	static_location = str(static_location + '/lz_assoc_viewer-' + version_number + '-py2.7.egg/lz_assoc_viewer/static/')
-#	return send_from_directory(static_location, path)
-
 def send_js(path):
 	return lz_app.send_static_file(path)
 
@@ -61,10 +57,8 @@ def manhattan():
 ##EFFECTS renders the lz plot template
 @lz_app.route('/lz/<region>')
 def lz_region(region):
-	if(not minimum_thread.isAlive()):
-		hits = minimum_solution.create_hits(minimum_thread);
-		
-	return render_template("lz-association-viewer.html", region=region, hits=hits, filetype=filetype)
+	
+	return render_template("lz-association-viewer.html", region=region, filetype=filetype)
 
 
 ##REQUIRES nothing
@@ -75,6 +69,11 @@ def QQ_plot():
 	
 	return redirect(url_for("QQ_plot_unbin"))
 
+
+
+##REQUIRES nothing
+##MODIFIES lz_app
+##EFFECTS make a route for the binned json for the QQ plot
 @lz_app.route('/QQ-unbin/')
 def QQ_plot_unbin():
 	if range_opt:
@@ -83,6 +82,11 @@ def QQ_plot_unbin():
 		default_range = minimum_range
 	return render_template("qq-unbin.html", default_range=default_range)
 
+
+
+##REQUIRES nothing
+##MODIFIES lz_app
+##EFFECTS make a route for the binned json for the QQ plot
 @lz_app.route('/QQ-bin/')
 def QQ_plot_bin():
 	if range_opt:
@@ -93,6 +97,9 @@ def QQ_plot_bin():
 
 @lz_app.route('/api/lz-results/', methods=['GET'])
 
+
+
+
 ##REQUIRES object is a dictionary
 ##MODIFIES lz_app
 ##EFFECTS displays a json objects at route '/api'
@@ -102,7 +109,6 @@ def api_lz():
 	
 	#if we have a query string, we need to update the chromosome and position information
 	if filter:
-			
 		chromosome, start, end = get_options.parse_query(filter)
 		chrom_pos_dict['chromosome'] = chromosome
 		chrom_pos_dict['start'] = start
@@ -125,19 +131,47 @@ def api_lz():
 	return jsonify(object)
 
 
+
+
+##REQUIRES nothing
+##MODIFIES lz_app
+## returns the JSON api for the "top hits"
+@lz_app.route('/api/hits/', methods=['GET'])
+def api_hits():
+	minimums = minimumThread.join()
+	hits = minimum_solution.create_hits(minimums)
+
+#find the minimum pvalue, and assign to the global
+	if minimum:
+		min_index = minimum_solution.find_min_of_mins(minimums)
+		minimum_chromosome = minimums['chromosome'][min_index]
+		minimum_position = minimums['position'][min_index]
+
+		global minimum_range
+		left = minimum_position-100000
+		right = minimum_position+100000
+		minimum_range = str(minimum_chromosome) + ":" + str(left) + "-" + str(right)
+
+	return jsonify(hits)
+
+
+
+
 ##REQUIRES nothing
 ##MODIFIES lz_app
 ##EFFECTS returns the JSON api for manhattan plots
 @lz_app.route('/api/manhattan/', methods=['GET'])
 def api_manhattan():
-	
+	cache.clear()
 	rv = cache.get('manhattan')
 	if rv is None:
 		#if not cached on server, check if its cached on local disk
 		if os.path.isfile(filename + '.manhattan.json'):
 			cache_fileobj = open(filename + '.manhattan.json', 'r')
 			rv = cache_fileobj.read()
+			rv = ast.literal_eval(rv)
 		
+		#if it is not cached on the local disc, create the manhattan plot
 		else:
 			file_reader = Data_reader.Data_reader.factory(filename, filetype)
 			variant_bins, unbinned_variants = manhattan_binning.bin_variants(file_reader)
@@ -150,8 +184,12 @@ def api_manhattan():
 			cache_fileobj.write(json.dumps(rv))
 
 		cache.set('manhattan', rv)
+	
 	return jsonify(rv)
 	
+
+
+
 ##REQUIRES nothing
 ##MODIFIES lz_app
 ##EFFECTS returns the JSON api for QQ plots
@@ -197,7 +235,6 @@ def api_qq():
 #----------------------------------------------------------------------------------------------------#
 ######################################################################################################
 
-
 	
 def main():
 	#check the input arguments
@@ -213,8 +250,9 @@ def main():
 	global host
 	host = arguments["host"]
 	
+	############################################################################################
 	
-	
+	#try to open up the file 
 	try:
 		trail = open(filename, 'r')
 
@@ -232,59 +270,39 @@ def main():
 		print >> sys.stderr,  "This program requires a tabix-indexed file, with the tabix file located in the current working directory: "
 		print >> sys.stderr,  os.getcwd()
 		sys.exit(1)
-			
+	#########################################################################################
+	
+	#Create a file object from said file		
 	global filetype
 	filetype = get_options.get_filetype(arguments, filename)
-	
 	file_reader = Data_reader.Data_reader.factory(filename, filetype)
 
 	#get the header of the file
 	global header
 	header = file_reader.header
 	
-	global hits
-	hits = minimum_solution.create_hits(minimum_solution.create_baseline_minimums(10))
-	global minimum_thread;
-	minimum_thread = threading.Thread(target=minimum_solution.find_min_pvals, args=(filename, filetype, 10, 102400))
-	minimum_thread.start()
+	#create a thread to find the minimum solution
+	global minimumThread 
+	minimumThread = Minimum_Thread.Minimum_Thread(filename, filetype, 10, 102400)
+	minimumThread.start()
+	global minimums 
+	minimums = None
 	
+	#create a default minimum range
+	global minimum_range
+	minimum_range = "11:118656777-118656888"
 
-	#find the minimums
-	#minimums = minimum_solution.find_min_pvals(filename, filetype, 10, 102400)
-	
-	
-	#create a list of 'hits'
-	
-	#hits = minimum_solution.create_hits(minimums)
-	
-	
-#find the minimum pvalue
-	if minimum:
-		min_index = minimum_solution.find_min_of_mins(minimums)
-
-		minimum_chromosome = minimums['chromosome'][min_index]
-		minimum_position = minimums['position'][min_index]
-
-		global minimum_range
-		left = minimum_position-100000
-		right = minimum_position+100000
-		minimum_range = str(minimum_chromosome) + ":" + str(left) + "-" + str(right)
-
-		
 	#create a dictionary that contains the most recent called chromosome and positions
 	global chrom_pos_dict
 	chrom_pos_dict = {'chromosome': 11, 'start': 1, 'end': 2}
 	
-	
-
+	#create a simple cache for the session
 	global cache
 	cache = SimpleCache()
 	
 
 	#run the flask webserver
 	lz_app.run(host = host, port = port_number, debug=True, threaded=True)
-
-
 
 	#(main)#
 if __name__ == '__main__':
