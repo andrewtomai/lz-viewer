@@ -41,7 +41,7 @@
 
 		.navbar-default .navbar-nav > .active > a, .navbar-default .navbar-nav > .active >   
 		 a:hover, .navbar-default .navbar-nav > .active > a:focus {
-		color: 666e92; /*BACKGROUND color for active*/
+		color: #666e92; /*BACKGROUND color for active*/
 		background-color: #bfbfbf
 		}
 
@@ -163,6 +163,8 @@
 			$.each(data, function(key, val) {
 				topHits.push([key, val]);
 			});
+			listHits();
+			populateForms();
 		});
 	
 		// Apply form data to a remapping of the demo LocusZoom instance
@@ -231,8 +233,6 @@
 		}
 
 		function initPage() {
-			listHits();
-			populateForms();
 			$("#lz-1_hits").html(topHits.map(function(k) {return "<option>" + k + "</option>"}).join(""));
 		};
 

@@ -9,8 +9,6 @@ def find_min_pvals(filename, filetype, num_minimums, region_buffer):
 	#skip the header
 	file_reader.skip_header()
 
-
-	
 	#create the minimums dictionary
 	minimums = create_baseline_minimums(num_minimums)
 	#find the highest of the minimums
@@ -31,16 +29,20 @@ def find_min_pvals(filename, filetype, num_minimums, region_buffer):
 		elif float(file_reader.get_pval()) >= highest_min:
 			line = file_reader.get_line()
 			continue
-
+		#lastly, we must check other attributes of this pval if we want to add it to the dictionary
 		else:
+			#determine if this pvalue shares a region with another minimum
 			shares_region, shared_index = index_of_shared_region(minimums, num_minimums, long(file_reader.get_pos()), region_buffer)
+			#if it does share a region:
 			if shares_region:
+				#determine which is smaller, and place the smaller minimum in the list
 				if float(file_reader.get_pval()) < minimums['value'][shared_index]:
 					minimums = replace_minimum(minimums, long(file_reader.get_pos()), float(file_reader.get_pval()), int(file_reader.get_chrom()), shared_index)
 					highest_min, highest_min_index = find_highest_min(minimums, num_minimums)
 				else:
 					line = file_reader.get_line()
 					continue
+			#if it does not share a region, place replace the previous highest minimum with the new minimum
 			else:
 				minimums = replace_minimum(minimums, long(file_reader.get_pos()), float(file_reader.get_pval()), int(file_reader.get_chrom()), highest_min_index)
 				highest_min, highest_min_index = find_highest_min(minimums, num_minimums)
@@ -146,3 +148,20 @@ def create_hits(minimums):
 		pos = str(pos)
 		hits.append([chr + ":" + pos, chr + ":" + pos])
 	return hits
+
+
+##REQUIRES
+##MODIFIES
+##EFFECTS
+def get_basic_region(filename, filetype):
+	#create a file reader from the file
+	file_reader = Data_reader.Data_reader.factory(filename, filetype)
+	#skip the header
+	file_reader.skip_header()
+
+	#get a line
+	line = file_reader.get_line()
+	chrom = file_reader.get_chrom()
+	position = file_reader.get_pos()
+
+	return str(chrom) + ":" + str(position) + "-" + str(int(position) + 200000)

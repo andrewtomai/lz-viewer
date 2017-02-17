@@ -57,7 +57,9 @@ def manhattan():
 ##EFFECTS renders the lz plot template
 @lz_app.route('/lz/<region>')
 def lz_region(region):
-	
+	print(region)
+	if region == "null":
+		region = minimum_solution.get_basic_region(filename, filetype)
 	return render_template("lz-association-viewer.html", region=region, filetype=filetype)
 
 
@@ -66,7 +68,6 @@ def lz_region(region):
 ##EFFECTS renders the qq plot template
 @lz_app.route('/QQ/')
 def QQ_plot():
-	
 	return redirect(url_for("QQ_plot_unbin"))
 
 
@@ -93,9 +94,12 @@ def QQ_plot_bin():
 		default_range = range_opt
 	else: 
 		default_range = minimum_range
-	return render_template("qq-bin.html", default_range=default_range)
 
-@lz_app.route('/api/lz-results/', methods=['GET'])
+	#if the filetype isnt EPACTS, go to the unbinned version
+	if filetype is not "EPACTS":
+		return redirect(url_for("QQ_plot_unbin"))
+
+	return render_template("qq-bin.html", default_range=default_range)
 
 
 
@@ -103,6 +107,7 @@ def QQ_plot_bin():
 ##REQUIRES object is a dictionary
 ##MODIFIES lz_app
 ##EFFECTS displays a json objects at route '/api'
+@lz_app.route('/api/lz-results/', methods=['GET'])
 def api_lz():
 	#get the filter query string
 	filter = request.args.get('filter')
@@ -162,7 +167,7 @@ def api_hits():
 ##EFFECTS returns the JSON api for manhattan plots
 @lz_app.route('/api/manhattan/', methods=['GET'])
 def api_manhattan():
-	cache.clear()
+	#cache.clear()
 	rv = cache.get('manhattan')
 	if rv is None:
 		#if not cached on server, check if its cached on local disk
@@ -197,39 +202,75 @@ def api_manhattan():
 def api_qq():
 	#check if we saved a cache from a previous run
 	
-	rv = cache.get('qq')
-	bin_status = cache.get('bin_status')
 	bin = request.args.get('bin')
-	
-	if rv is None or (bin_status is not bin):
-		file_reader = Data_reader.Data_reader.factory(filename, filetype)
-		#if its not cached on server, check if its cached on the local disk
-		if (bin == 'true' or bin == 'True'):
-			if os.path.isfile(filename + '.qq.bin.json'):
-				cache_fileobj = open(filename + '.qq.json', 'r')
-				rv = cache_fileobj.read()
-			
-			elif filetype == 'EPACTS':
-				rv = qq_to_json.make_qq_stratified(file_reader, True)
-				#write to local disk
-				cache_fileobj = open(filename + '.qq.bin.json', 'w')
-				cache_fileobj.write(json.dumps(rv))
+	rv = cache.get('qq-'+bin)
 
-		elif (bin == 'false' or bin == 'False'):
-			if os.path.isfile(filename + '.qq.unbin.json'):
-				cache_fileobj = open(filename + '.qq.unbin.json', 'r')
-				rv = cache_fileobj.read()
-	
+	if rv is None:
+		#check if data is cached on the local disk!
+		if (bin == 'true' or bin == 'True') and os.path.isfile(filename + '.qq.bin.json'):
+			cache_fileobj = open(filename + 'qq.bin.json', 'r')
+			rv = cache_fileobj.read()
+
+		elif (bin == 'false' or bin == 'False') and os.path.isfile(filename + 'qq.unbin.json'):
+			cache_fileobj = open(filename + 'qq.unbin.json', 'r')
+			rv = cache_fileobj.read()
+
+		else:
+			#we need to create the data!
+			file_reader = Data_reader.Data_reader.factory(filename, filetype)
+			#if we are looking for the binned solution:
+			if bin == 'true' or bin == 'True':
+				rv = qq_to_json.make_qq_stratified(file_reader, True)
+				rv = json.dumps(rv);
+				#write to file
+				cache_fileobj = open(filename + '.qq.bin.json', 'w')
+				cache_fileobj.write(rv)
 			else:
 				rv = qq_to_json.make_qq_stratified(file_reader, False)
-				#write to local disk
-				cache_fileobj = open(filename+ '.qq.unbin.json', 'w')
-				cache_fileobj.write(json.dumps(rv))
+				rv = json.dumps(rv);
+				#write to file
+				cache_fileobj = open(filename + '.qq.unbin.json', 'w')
+				cache_fileobj.write(rv)
 
-		cache.set('qq', rv)
-		cache.set('bin_status', bin)
-	resp = Response(response=json.dumps(rv), status=200, mimetype="application/json")
+	#rv should have data! set the cache, and return the data
+	cache.set('qq-'+bin, rv)
+	resp = Response(response=rv, status=200, mimetype="application/json")
 	return resp
+
+	
+	#rv = cache.get('qq')
+	#bin_status = cache.get('bin_status')
+	#bin = request.args.get('bin')
+	
+	#if rv is None or (bin_status is not bin):
+	#	file_reader = Data_reader.Data_reader.factory(filename, filetype)
+	#	#if its not cached on server, check if its cached on the local disk
+	#	if (bin == 'true' or bin == 'True'):
+	#		if os.path.isfile(filename + '.qq.bin.json'):
+	#			cache_fileobj = open(filename + '.qq.json', 'r')
+	#			rv = cache_fileobj.read()
+			
+	#		elif filetype == 'EPACTS':
+	#			rv = qq_to_json.make_qq_stratified(file_reader, True)
+	#			#write to local disk
+	#			cache_fileobj = open(filename + '.qq.bin.json', 'w')
+	#			cache_fileobj.write(json.dumps(rv))
+
+	#	elif (bin == 'false' or bin == 'False'):
+	#		if os.path.isfile(filename + '.qq.unbin.json'):
+	#			cache_fileobj = open(filename + '.qq.unbin.json', 'r')
+	#			rv = cache_fileobj.read()
+	
+	#		else:
+	#			rv = qq_to_json.make_qq_stratified(file_reader, False)
+	#			#write to local disk
+	#			cache_fileobj = open(filename+ '.qq.unbin.json', 'w')
+	#			cache_fileobj.write(json.dumps(rv))
+
+	#	cache.set('qq', rv)
+	#	cache.set('bin_status', bin)
+	#resp = Response(response=json.dumps(rv), status=200, mimetype="application/json")
+	#return resp
 
 
 #----------------------------------------------------------------------------------------------------#
@@ -290,7 +331,7 @@ def main():
 	
 	#create a default minimum range
 	global minimum_range
-	minimum_range = "11:118656777-118656888"
+	minimum_range = "null"
 
 	#create a dictionary that contains the most recent called chromosome and positions
 	global chrom_pos_dict
