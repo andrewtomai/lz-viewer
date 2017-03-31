@@ -18,6 +18,18 @@ from flask import Flask, jsonify, request, render_template, url_for, Response, s
 #--------------------------------------Flask initialization---------------------------------------------#	
 lz_app = Flask(__name__, static_url_path='')
 
+#if the user wants to shutdown the server
+def shutdown_server():
+	func = request.environ.get('werkzeug.server.shutdown')
+	if func is None:
+		raise RuntimeError('Not running with Werkzeug Server')
+	func()
+
+@lz_app.route('/shutdown/', methods=['POST', 'GET'])
+def shutdown():
+	shutdown_server()
+	return 'Server shutting down...'
+
 @lz_app.after_request
 def after_request(response):
 	response.headers.add('Access-Control-Allow-Origin', '*')
@@ -208,11 +220,11 @@ def api_qq():
 	if rv is None:
 		#check if data is cached on the local disk!
 		if (bin == 'true' or bin == 'True') and os.path.isfile(filename + '.qq.bin.json'):
-			cache_fileobj = open(filename + 'qq.bin.json', 'r')
+			cache_fileobj = open(filename + '.qq.bin.json', 'r')
 			rv = cache_fileobj.read()
 
-		elif (bin == 'false' or bin == 'False') and os.path.isfile(filename + 'qq.unbin.json'):
-			cache_fileobj = open(filename + 'qq.unbin.json', 'r')
+		elif (bin == 'false' or bin == 'False') and os.path.isfile(filename + '.qq.unbin.json'):
+			cache_fileobj = open(filename + '.qq.unbin.json', 'r')
 			rv = cache_fileobj.read()
 
 		else:
@@ -238,39 +250,6 @@ def api_qq():
 	return resp
 
 	
-	#rv = cache.get('qq')
-	#bin_status = cache.get('bin_status')
-	#bin = request.args.get('bin')
-	
-	#if rv is None or (bin_status is not bin):
-	#	file_reader = Data_reader.Data_reader.factory(filename, filetype)
-	#	#if its not cached on server, check if its cached on the local disk
-	#	if (bin == 'true' or bin == 'True'):
-	#		if os.path.isfile(filename + '.qq.bin.json'):
-	#			cache_fileobj = open(filename + '.qq.json', 'r')
-	#			rv = cache_fileobj.read()
-			
-	#		elif filetype == 'EPACTS':
-	#			rv = qq_to_json.make_qq_stratified(file_reader, True)
-	#			#write to local disk
-	#			cache_fileobj = open(filename + '.qq.bin.json', 'w')
-	#			cache_fileobj.write(json.dumps(rv))
-
-	#	elif (bin == 'false' or bin == 'False'):
-	#		if os.path.isfile(filename + '.qq.unbin.json'):
-	#			cache_fileobj = open(filename + '.qq.unbin.json', 'r')
-	#			rv = cache_fileobj.read()
-	
-	#		else:
-	#			rv = qq_to_json.make_qq_stratified(file_reader, False)
-	#			#write to local disk
-	#			cache_fileobj = open(filename+ '.qq.unbin.json', 'w')
-	#			cache_fileobj.write(json.dumps(rv))
-
-	#	cache.set('qq', rv)
-	#	cache.set('bin_status', bin)
-	#resp = Response(response=json.dumps(rv), status=200, mimetype="application/json")
-	#return resp
 
 
 #----------------------------------------------------------------------------------------------------#

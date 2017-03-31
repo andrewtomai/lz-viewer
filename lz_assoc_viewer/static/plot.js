@@ -10,7 +10,8 @@ var tooltip_template_data =
     "<%= d.chrom %>:<%= d.pos.toLocaleString() %> <%= d.ref %> &gt; <%= d.alt %><br>" +
     "pval: <%= d.pval %><br>" +
     "MAF: <%= d.maf %><br>";
-
+var qq_tooltip_template_data =
+	"<%= d.chrom %>:<%= d.pos.toLocaleString() %>";
 function create_gwas_plot(selector, variant_bins, unbinned_variants, on_variant_click) {
 
     var get_chrom_offsets = _.memoize(function() {
@@ -385,6 +386,20 @@ function create_qq_plot(selector, maf_ranges) {
             .attr('fill', function (d, i, parent_index) {
                 return maf_ranges[parent_index].color;
             });
+        var tooltip_template = _.template(qq_tooltip_template_data);
+        var point_tooltip = d3.tip()
+            .attr('class', 'd3-tip')
+            .html(function (d) {
+            	return tooltip_template({ d: d });
+            })
+            .style("background", "rgba(0, 0, 0, 0.7)")
+            .style("color", "#FFFFFF")
+            .style("padding", "5px")
+            .style("border", "1px solid #000000")
+            .style("border-radius", "3px")
+            .offset([-6, 0]);
+        qq_svg.call(point_tooltip);
+
 
         // Legend
         qq_svg.append('g')
